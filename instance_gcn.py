@@ -22,21 +22,21 @@ import torch_geometric.nn as geometric_nn
 import torch.nn.functional as F
 import networkx as nx
 from convert_svg import render_svg
-from gcn_model import GCN
+from gcn_model import GCNs
 import torchvision.models as models
 
 ###Working better for 500 epoch
 Epochs = 500
 
-# model = models.resnet18(pretrained=True)
-# layer = model._modules.get('avgpool')
+model = models.resnet18(pretrained=True)
+layer = model._modules.get('avgpool')
 
-# transforms = torchvision.transforms.Compose([
-#     torchvision.transforms.Resize(256),
-#     torchvision.transforms.CenterCrop(224),
-#     torchvision.transforms.ToTensor(),
-#     torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-# ])
+transforms = torchvision.transforms.Compose([
+    torchvision.transforms.Resize(256),
+    torchvision.transforms.CenterCrop(224),
+    torchvision.transforms.ToTensor(),
+    torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
 
 
 
@@ -48,49 +48,83 @@ def normalize(adj):
     adj = r_mat_inv.dot(adj)
     return adj
 
-def segmentation_adjacency(segmentation, connectivity=8):
-    """Generate an adjacency matrix out of a given segmentation."""
 
-    ###Working better for connectivity=8
-    assert connectivity == 4 or connectivity == 8
+def get_xy(x_list,y_list):
+    for x in x_list:
+        for y in y_list:
+            yield (x,y)
 
-    # Get centroids.
-    idx = np.indices(segmentation.shape)
-    ys = npg.aggregate(segmentation.flatten(), idx[0].flatten(), func='mean')
-    xs = npg.aggregate(segmentation.flatten(), idx[1].flatten(), func='mean')
-    ys = np.reshape(ys, (-1, 1))
-    xs = np.reshape(xs, (-1, 1))
-    points = np.concatenate((ys, xs), axis=1)
+def adjacency_matrix(labels, conn=4, loop=True, max_label=-1):
+    """ labels: (B, H, W) or (B,1,H,W) torch.uint8 """
+    assert conn in [4,8], f"conn must be either 4 or 8 connectivity"
 
-    # Get mass.
-    nums, mass = np.unique(segmentation, return_counts=True)
-    n = nums.shape[0]
+    labels = torch.from_numpy(labels)
+    if len(labels.shape) == 4:
+        assert labels.size(1) == 1, f"labels must be of size (B,H,C) or (B,1,H,C): {labels.shape}"
+        labels = labels.squeeze(1)
 
-    # Get adjacency (https://goo.gl/y1xFMq).
-    tmp = np.zeros((n, n), bool)
-
-    # Get vertically adjacency.
-    a, b = segmentation[:-1, :], segmentation[1:, :]
+    H, W = labels.shape
+    N = H*W
+    adj = torch.zeros((N, N), dtype=torch.float32).to(labels.device)
+    max_label = torch.max(labels) + 1 if max_label == -1 else torch.tensor(max_label)
     
-    tmp[a[a != b], b[a != b]] = True
+    for (y,x) in get_xy(list(range(0, H, 1)), list(range(0, W, 1))):
 
-    # Get horizontally adjacency.
-    a, b = segmentation[:, :-1], segmentation[:, 1:]
-    tmp[a[a != b], b[a != b]] = True
+        #top-left
+        node=y*W + x
+        i = labels[y,x]
+        #print(f"node={node+1} ({x},{y}) -> {i}")
+      
+        if i.sum() == 0: continue 
 
-    # Get diagonal adjacency.
-    if connectivity == 8:
-        a, b = segmentation[:-1, :-1], segmentation[1:, 1:]
-        tmp[a[a != b], b[a != b]] = True
+        #itself
+        if loop:
+            adj[node, node] = torch.min((i > 0) * i, max_label)
+        #print(f"node={node+1} (-> itself) ({x},{y}) -> {i > 0} * {i} -> {(i > 0) * i}")
+    
+        #right
+        if x+1 < W:
+            nn = i == labels[y,x+1]
+            #print(f"node={node+1} (->right) ({x+1},{y}) -> {i} -> {nn*i}")
+            if nn.sum():
+                label = torch.min(nn*i, max_label)
+                adj[node, node+1] = label 
+                adj[node+1, node] = label
 
-        a, b = segmentation[:-1, 1:], segmentation[1:, :-1]
-        tmp[a[a != b], b[a != b]] = True
+        #down
+        if y+1 < H:
+            nn = i == labels[y+1,x]
+            #print(f"node={node+1} (->down) ({x},{y+1}) -> {i} -> {nn*i}")
+            if nn.sum():
+                j = (y+1)*W + x
+                label = torch.min(nn*i, max_label)
+                adj[node, j ] = label 
+                adj[j, node]  = label
+       
+        #TODO: check this
+        if conn == 8:
+            #down diagonal
+            if y+1 < H and x+1 < W:
+                nn = i == labels[y+1,x+1]
+                if nn.sum():
+                    j = (y+1)*W + x
+                    label = torch.min(nn*i, max_label)
+                    adj[node+1, j] = label
+                    adj[j, node+1] = label 
+           
+            #up diagonal
+            if y-1 >= 0 and x+1 < W:
+                #i = labels[:, y-1, x]
+                nn = i == labels[y-1,x+1]
+                if nn.sum():
+                    j = (y-1)*W + x
+                    label = torch.min(nn*i, max_label)
+                    adj[j , node+1] = label 
+                    adj[node+1, j]  = label 
 
-    result = tmp | tmp.T
-    result = result.astype(np.uint8)
-    adj = sp.coo_matrix(result)
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = normalize(adj + sp.eye(adj.shape[0]))
+        #print(adj)
+
+
     return adj
 
 def create_edge_list(adj):
@@ -104,33 +138,33 @@ def create_edge_list(adj):
     return edge_list
 
 def create_features(image, segmentation):
-    total = 0
-    features = []
-    max_dim = -1
-    for i in range(np.amax(segmentation)+1):
-        indice = np.where(segmentation==i)
-        features.append(image[indice[0], indice[1]].flatten().tolist())
-        if len(features[-1]) > max_dim:
-            max_dim = len(features[-1])
+    # total = 0
+    # features = []
+    # max_dim = -1
+    # for i in range(np.amax(segmentation)+1):
+    #     indice = np.where(segmentation==i)
+    #     features.append(image[indice[0], indice[1]].flatten().tolist())
+    #     if len(features[-1]) > max_dim:
+    #         max_dim = len(features[-1])
 
-    for i in range(len(features)):
-        features[i].extend([0] * (max_dim-len(features[i])))
+    # for i in range(len(features)):
+    #     features[i].extend([0] * (max_dim-len(features[i])))
 
 
-    # image = Image.fromarray(image)
-    # t_img = transforms(image)
-    # my_embedding = torch.zeros(512)
-    # def copy_data(m, i, o):
-    #     my_embedding.copy_(o.flatten())
+    image = Image.fromarray(image)
+    t_img = transforms(image)
+    my_embedding = torch.zeros(512)
+    def copy_data(m, i, o):
+        my_embedding.copy_(o.flatten())
     
-    # h = layer.register_forward_hook(copy_data)
-    # with torch.no_grad():
-    #     model(t_img.unsqueeze(0))
-    # h.remove()
-    #features = np.array(my_embedding)
+    h = layer.register_forward_hook(copy_data)
+    with torch.no_grad():
+        model(t_img.unsqueeze(0))
+    h.remove()
+    features = np.array(my_embedding)
     features = np.array(features)
     features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
-
+    features_norm = np.reshape(features_norm, (2,-1))
     return features_norm
 
 def create_target(segmentation, target_mask):
@@ -239,19 +273,23 @@ def test_loader(max_dim):
     # plt.imshow(seg_img)
     # plt.show()
 
-    adj = segmentation_adjacency(segmentation)
-    adj = np.array(adj.todense())
-    adj = torch.from_numpy(adj).type(torch.FloatTensor)
-    
-    edge_x = Variable(torch.from_numpy(create_edge_list(adj))).cuda()
-    features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.cuda.FloatTensor)
-
     target_mask = mask
     #target_mask = np.asarray(target_mask.resize((200,200)))[:, :, 1]
-    y = Variable(torch.from_numpy(create_target(segmentation, target_mask)))
+    #y = Variable(torch.from_numpy(create_target(segmentation, target_mask)))
+    target_mask = np.array(target_mask)
+    y = Variable(torch.from_numpy(target_mask))
     num_instance = np.max(target_mask)+1
     targets.append(y)
 
+    adj = adjacency_matrix(target_mask)
+    adj = np.asarray(adj)
+    #adj = np.array(adj.todense())
+    adj = torch.from_numpy(adj).type(torch.FloatTensor)
+    
+    edge_x =[]
+    #edge_x = Variable(torch.from_numpy(create_edge_list(adj))).cuda()
+    features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.cuda.FloatTensor)
+    
     datasets = []
     datasets.append(Data(features, edge_x, y=targets))
 
@@ -290,59 +328,40 @@ def test(model, adj, num_instance_label, max_dim):
                                                    data_num, 100. * correct / data_num))
         return image, mask, target_mask
 
-# def train(model, optimizer, loader, adj):
-#     all_logits = []
-#     for epoch in range(Epochs):
-#         model.train()
-#         loss = 0
-#         for data in loader:
-#             #print("data = {}".format(data))
-#             y = data.y
-#             y = y[0].type(torch.cuda.LongTensor)
-#             x = data.x
-#             x = x.cpu()
-
-#             optimizer.zero_grad()
-#             output = model(x, adj).cuda()
-#             all_logits.append(output.detach())
-#             #output = output.transpose(0, 1)
-#             loss = F.cross_entropy(output, y)
-#             loss.backward()
-#             optimizer.step()
-
-#             # logits = model(x, adj)
-#             # all_logits.append(logits.detach())
-#             # logp = F.log_softmax(logits, 1).cuda()
-#             # loss = F.nll_loss(logp, y)
-#             # optimizer.zero_grad()
-#             # loss.backward()
-#             # optimizer.step()
-
-#         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
-#     return all_logits
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = GCN(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-
 def train(model, optimizer, loader, adj):
-    model.train()
     all_logits = []
     for epoch in range(Epochs):
+        model.train()
         loss = 0
         for data in loader:
+            #print("data = {}".format(data))
             y = data.y
             y = y[0].type(torch.cuda.LongTensor)
+            x = data.x
+            x = x.cpu()
+            
             optimizer.zero_grad()
-            out = model(data)
-            all_logits.append(out.detach())
-            loss = F.nll_loss(out, y)
+            output = model(x, adj).cuda()
+            all_logits.append(output.detach())
+            #output = output.transpose(0, 1)
+            loss = F.cross_entropy(output, y)
             loss.backward()
             optimizer.step()
+
+            # logits = model(x, adj)
+            # all_logits.append(logits.detach())
+            # logp = F.log_softmax(logits, 1).cuda()
+            # loss = F.nll_loss(logp, y)
+            # optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
+
         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
     return all_logits
-    
-all_logits = train(model, optimizer, loader, adj)
+
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# model = GCN(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5).to(device)
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
 
 def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
@@ -357,9 +376,9 @@ def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
     return y_pred
 
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
-#model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
-#optimizer = optim.Adam(model.parameters(), 0.01)
-#all_logits = train(model, optimizer, loader, adj)
+model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
+optimizer = optim.Adam(model.parameters(), 0.01)
+all_logits = train(model, optimizer, loader, adj)
 
 def select_mask_color(cls):
     background_color = [0, 0, 0]
@@ -404,7 +423,7 @@ def create_mask(img, segmentation, node_num, epoch):
 
 
 
-adj = segmentation_adjacency(segmentation)
+adj = adjacency_matrix(segmentation)
 dense_adj = np.array(adj.todense())
 edges = []
 nodes = np.array([])
