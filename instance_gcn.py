@@ -1,4 +1,5 @@
 import torch
+import torchvision
 from torch.autograd import Variable
 import torch.optim as optim
 from torch_geometric.data import Data
@@ -21,10 +22,23 @@ import torch_geometric.nn as geometric_nn
 import torch.nn.functional as F
 import networkx as nx
 from convert_svg import render_svg
-from gcn_model import GCNs
+from gcn_model import GCN
+import torchvision.models as models
 
 ###Working better for 500 epoch
-Epochs = 200
+Epochs = 500
+
+# model = models.resnet18(pretrained=True)
+# layer = model._modules.get('avgpool')
+
+# transforms = torchvision.transforms.Compose([
+#     torchvision.transforms.Resize(256),
+#     torchvision.transforms.CenterCrop(224),
+#     torchvision.transforms.ToTensor(),
+#     torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+# ])
+
+
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -102,6 +116,18 @@ def create_features(image, segmentation):
     for i in range(len(features)):
         features[i].extend([0] * (max_dim-len(features[i])))
 
+
+    # image = Image.fromarray(image)
+    # t_img = transforms(image)
+    # my_embedding = torch.zeros(512)
+    # def copy_data(m, i, o):
+    #     my_embedding.copy_(o.flatten())
+    
+    # h = layer.register_forward_hook(copy_data)
+    # with torch.no_grad():
+    #     model(t_img.unsqueeze(0))
+    # h.remove()
+    #features = np.array(my_embedding)
     features = np.array(features)
     features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
 
@@ -205,7 +231,7 @@ def test_loader(max_dim):
     # plt.show()
 
     ###Need to fine tune
-    segmentation_algorithm = slic_fixed(200, compactness=1, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(100, compactness=1, max_iterations=10, sigma=0)
     segmentation = segmentation_algorithm(image)
 
     seg_img = mark_boundaries(image, segmentation)
@@ -250,7 +276,7 @@ def test(model, adj, num_instance_label, max_dim):
             x = data.x
             x = x.cpu()
 
-            logits = model(x, adj)
+            logits = model(data)
             logp = F.log_softmax(logits, 1)
             pred = logp.max(1, keepdim=True)[1].cuda()
             for v in range(0, node_num):
@@ -264,36 +290,60 @@ def test(model, adj, num_instance_label, max_dim):
                                                    data_num, 100. * correct / data_num))
         return image, mask, target_mask
 
+# def train(model, optimizer, loader, adj):
+#     all_logits = []
+#     for epoch in range(Epochs):
+#         model.train()
+#         loss = 0
+#         for data in loader:
+#             #print("data = {}".format(data))
+#             y = data.y
+#             y = y[0].type(torch.cuda.LongTensor)
+#             x = data.x
+#             x = x.cpu()
+
+#             optimizer.zero_grad()
+#             output = model(x, adj).cuda()
+#             all_logits.append(output.detach())
+#             #output = output.transpose(0, 1)
+#             loss = F.cross_entropy(output, y)
+#             loss.backward()
+#             optimizer.step()
+
+#             # logits = model(x, adj)
+#             # all_logits.append(logits.detach())
+#             # logp = F.log_softmax(logits, 1).cuda()
+#             # loss = F.nll_loss(logp, y)
+#             # optimizer.zero_grad()
+#             # loss.backward()
+#             # optimizer.step()
+
+#         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
+#     return all_logits
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = GCN(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+
 def train(model, optimizer, loader, adj):
+    model.train()
     all_logits = []
     for epoch in range(Epochs):
         loss = 0
         for data in loader:
-            #print("data = {}".format(data))
             y = data.y
             y = y[0].type(torch.cuda.LongTensor)
-            x = data.x
-            x = x.cpu()
-
             optimizer.zero_grad()
-            output = model(x, adj).cuda()
-            all_logits.append(output.detach())
-            #output = output.transpose(0, 1)
-            loss = F.cross_entropy(output, y)
+            out = model(data)
+            all_logits.append(out.detach())
+            loss = F.nll_loss(out, y)
             loss.backward()
             optimizer.step()
-
-            # logits = model(x, adj)
-            # all_logits.append(logits.detach())
-            # logp = F.log_softmax(logits, 1).cuda()
-            # loss = F.nll_loss(logp, y)
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
-
         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
     return all_logits
-        
+    
+all_logits = train(model, optimizer, loader, adj)
+
 
 def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
 #    y_pred = Variable(torch.zeros(img_size)).cuda()
@@ -307,9 +357,9 @@ def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
     return y_pred
 
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
-model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
-optimizer = optim.Adam(model.parameters(), 0.01)
-all_logits = train(model, optimizer, loader, adj)
+#model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
+#optimizer = optim.Adam(model.parameters(), 0.01)
+#all_logits = train(model, optimizer, loader, adj)
 
 def select_mask_color(cls):
     background_color = [0, 0, 0]
