@@ -156,12 +156,12 @@ def test_loader(max_dim):
     edge_list = []
     targets = []
     ###Change filename number
-    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/9.svg')
+    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/1.svg')
     with open(svg_name, 'r') as f_svg:
         svg = f_svg.read()
 
     ###Uncomment for cat/baseball dataset
-    num_paths = svg.count('polyline')
+    # num_paths = svg.count('polyline')
 
     # for i in range(1, num_paths + 1):
     #     svg_xml = et.fromstring(svg)
@@ -172,8 +172,10 @@ def test_loader(max_dim):
     #     # leave only one path
     #     y_png = cairosvg.svg2png(bytestring=svg_one)
     #     y_img = Image.open(io.BytesIO(y_png))
+    #     y_img.thumbnail((64,64))
     #     mask = (np.array(y_img)[:, :, 3] > 0)
     #     mask = mask.astype(np.uint8)
+        
 
     # plt.figure()
     # plt.imshow(mask, cmap='gray')
@@ -205,7 +207,7 @@ def test_loader(max_dim):
     # plt.show()
 
     ###Need to fine tune
-    segmentation_algorithm = slic_fixed(300, compactness=1, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(500, compactness=1, max_iterations=20, sigma=0)
     segmentation = segmentation_algorithm(image)
 
     seg_img = mark_boundaries(image, segmentation)
@@ -378,7 +380,7 @@ plt.show()
 mask = mask.mean(axis=2)
 mask = (mask != 0)
 ###Change filename number
-im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/9_train.svg")
+im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/1_train.svg")
 
 del segmentation
 from skimage import color, segmentation
@@ -387,16 +389,19 @@ image, mask, target_mask = test(model, adj, n, max_dim=-1)
 plt.figure()
 plt.subplot(1,3,1)
 plt.imshow(image)
+plt.title('Original Image')
 plt.subplot(1,3,2)
 plt.imshow(mask)
+plt.title('Output Mask')
 plt.subplot(1,3,3)
-plt.imshow(target_mask)
+plt.imshow(target_mask, cmap='gray')
+plt.title('Target Mask')
 plt.show()
 
 mask = mask.mean(axis=2)
 mask = (mask != 0)
 ###Change filename number
-im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/9_test.svg")
+im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/10_test.svg")
 
 
     
