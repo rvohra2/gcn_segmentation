@@ -24,7 +24,7 @@ from convert_svg import render_svg
 from gcn_model import GCNs
 
 ###Working better for 500 epoch
-Epochs = 200
+Epochs = 500
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -156,12 +156,12 @@ def test_loader(max_dim):
     edge_list = []
     targets = []
     ###Change filename number
-    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/1.svg')
+    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/9.svg')
     with open(svg_name, 'r') as f_svg:
         svg = f_svg.read()
 
     ###Uncomment for cat/baseball dataset
-    # num_paths = svg.count('polyline')
+    num_paths = svg.count('polyline')
 
     # for i in range(1, num_paths + 1):
     #     svg_xml = et.fromstring(svg)
@@ -205,7 +205,7 @@ def test_loader(max_dim):
     # plt.show()
 
     ###Need to fine tune
-    segmentation_algorithm = slic_fixed(200, compactness=1, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(300, compactness=1, max_iterations=20, sigma=0)
     segmentation = segmentation_algorithm(image)
 
     seg_img = mark_boundaries(image, segmentation)
@@ -307,7 +307,9 @@ def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
     return y_pred
 
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
-model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
+nums, mass = np.unique(segmentation, return_counts=True)
+n = nums.shape[0]
+model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=n,dropout=0.5)
 optimizer = optim.Adam(model.parameters(), 0.01)
 all_logits = train(model, optimizer, loader, adj)
 
@@ -376,11 +378,11 @@ plt.show()
 mask = mask.mean(axis=2)
 mask = (mask != 0)
 ###Change filename number
-im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/1_train.svg")
+im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/9_train.svg")
 
 del segmentation
 from skimage import color, segmentation
-image, mask, target_mask = test(model, adj, 2, max_dim=-1)
+image, mask, target_mask = test(model, adj, n, max_dim=-1)
 
 plt.figure()
 plt.subplot(1,3,1)
@@ -394,7 +396,7 @@ plt.show()
 mask = mask.mean(axis=2)
 mask = (mask != 0)
 ###Change filename number
-im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/1_test.svg")
+im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/9_test.svg")
 
 
     
