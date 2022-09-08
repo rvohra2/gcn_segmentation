@@ -22,9 +22,10 @@ import torch.nn.functional as F
 import networkx as nx
 from convert_svg import render_svg
 from gcn_model import GCNs
+import lovasz as L
 
 ###Working better for 500 epoch
-Epochs = 500
+Epochs = 400
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -156,25 +157,25 @@ def test_loader(max_dim):
     edge_list = []
     targets = []
     ###Change filename number
-    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/1.svg')
+    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/10.svg')
     with open(svg_name, 'r') as f_svg:
         svg = f_svg.read()
 
     ###Uncomment for cat/baseball dataset
-    # num_paths = svg.count('polyline')
+    num_paths = svg.count('polyline')
 
-    # for i in range(1, num_paths + 1):
-    #     svg_xml = et.fromstring(svg)
-    #     #svg_xml[1] = svg_xml[i]
-    #     #del svg_xml[2:]
-    #     svg_one = et.tostring(svg_xml, method='xml')
+    for i in range(1, num_paths + 1):
+        svg_xml = et.fromstring(svg)
+        #svg_xml[1] = svg_xml[i]
+        #del svg_xml[2:]
+        svg_one = et.tostring(svg_xml, method='xml')
 
-    #     # leave only one path
-    #     y_png = cairosvg.svg2png(bytestring=svg_one)
-    #     y_img = Image.open(io.BytesIO(y_png))
-    #     y_img.thumbnail((64,64))
-    #     mask = (np.array(y_img)[:, :, 3] > 0)
-    #     mask = mask.astype(np.uint8)
+        # leave only one path
+        y_png = cairosvg.svg2png(bytestring=svg_one)
+        y_img = Image.open(io.BytesIO(y_png))
+        y_img.thumbnail((64,64))
+        mask = (np.array(y_img)[:, :, 3] > 0)
+        mask = mask.astype(np.uint8)
         
 
     # plt.figure()
@@ -183,18 +184,18 @@ def test_loader(max_dim):
 
 
     ###Uncomment for line drawing dataset
-    num_paths = len(et.fromstring(svg)[0])
-    for i in range(num_paths):
-        svg_xml = et.fromstring(svg)
-        # svg_xml[0][0] = svg_xml[0][i]
-        # del svg_xml[0][1:]
-        svg_one = et.tostring(svg_xml, method='xml')
+    # num_paths = len(et.fromstring(svg)[0])
+    # for i in range(num_paths):
+    #     svg_xml = et.fromstring(svg)
+    #     # svg_xml[0][0] = svg_xml[0][i]
+    #     # del svg_xml[0][1:]
+    #     svg_one = et.tostring(svg_xml, method='xml')
 
-        # leave only one path
-        y_png = cairosvg.svg2png(bytestring=svg_one)
-        y_img = Image.open(io.BytesIO(y_png))
-        mask = (np.array(y_img)[:, :, 3] > 0)
-        mask = mask.astype(np.uint8)
+    #     # leave only one path
+    #     y_png = cairosvg.svg2png(bytestring=svg_one)
+    #     y_img = Image.open(io.BytesIO(y_png))
+    #     mask = (np.array(y_img)[:, :, 3] > 0)
+    #     mask = mask.astype(np.uint8)
 
     # plt.figure()
     # plt.imshow(mask, cmap='gray')
@@ -207,7 +208,7 @@ def test_loader(max_dim):
     # plt.show()
 
     ###Need to fine tune
-    segmentation_algorithm = slic_fixed(500, compactness=1, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(500, compactness=5, max_iterations=10, sigma=0)
     segmentation = segmentation_algorithm(image)
 
     seg_img = mark_boundaries(image, segmentation)
@@ -281,7 +282,11 @@ def train(model, optimizer, loader, adj):
             output = model(x, adj).cuda()
             all_logits.append(output.detach())
             #output = output.transpose(0, 1)
-            loss = F.cross_entropy(output, y)
+            output = output.unsqueeze(0)
+            y = y.unsqueeze(0)
+            output = torch.sigmoid(output)
+            loss = L.lovasz_softmax(output, y)
+            
             loss.backward()
             optimizer.step()
 
@@ -311,7 +316,7 @@ def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
 nums, mass = np.unique(segmentation, return_counts=True)
 n = nums.shape[0]
-model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=n,dropout=0.5)
+model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=n,dropout=0.1)
 optimizer = optim.Adam(model.parameters(), 0.01)
 all_logits = train(model, optimizer, loader, adj)
 
@@ -401,7 +406,7 @@ plt.show()
 mask = mask.mean(axis=2)
 mask = (mask != 0)
 ###Change filename number
-im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/10_test.svg")
+im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/1_test.svg")
 
 
     
