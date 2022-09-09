@@ -1,0 +1,2380 @@
+2022-09-08 15:30:49,032 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 15:30:52,691 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 15:30:54,358 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 15:30:55,991 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 15:30:56,915 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 15:32:43,566 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 15:32:43,567 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 15:32:43,567 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 15:32:43,567 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 15:32:43,568 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 15:34:10,103 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 15:34:10,103 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 15:34:10,104 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 15:34:10,104 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 15:34:10,104 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 15:45:06,514 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 15:45:06,515 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 15:45:06,515 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 15:45:06,515 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 15:45:06,516 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:26:58,845 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:26:58,846 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:26:58,846 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:26:58,846 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:26:58,846 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:40:25,685 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:40:25,686 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:40:25,686 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:40:25,686 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:40:25,687 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:41:50,208 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:41:50,208 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:41:50,208 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:41:50,208 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:41:50,209 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:49:43,103 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:49:43,103 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:49:43,103 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:49:43,103 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:49:43,104 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:50:04,194 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:50:04,194 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:50:04,194 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:50:04,195 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:50:04,195 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:51:40,345 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:51:40,345 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:51:40,346 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:51:40,346 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:51:40,347 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:52:20,934 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:52:20,934 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:52:20,934 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:52:20,935 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:52:20,935 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:53:24,258 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:53:24,259 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:53:24,259 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:53:24,259 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:53:24,259 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 16:55:00,444 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 16:55:00,444 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 16:55:00,444 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 16:55:00,444 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 16:55:00,445 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
+2022-09-08 17:09:07,579 maskrcnn_benchmark INFO: Using 1 GPUs
+2022-09-08 17:09:07,579 maskrcnn_benchmark INFO: Namespace(config='/home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml', local_rank=0, opts=[], distributed=False)
+2022-09-08 17:09:07,579 maskrcnn_benchmark INFO: Loaded configuration file /home/rhythm/Documents/Github/gcn_segmentation/configs/ch_m32_b32_pool8.yaml
+2022-09-08 17:09:07,579 maskrcnn_benchmark INFO: 
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  BACKBONE:
+    CONV_BODY: "R-50-FPN"
+    OUT_CHANNELS: 256
+  RPN:
+    USE_FPN: True
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    PRE_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TEST: 1000
+  ROI_HEADS:
+    USE_FPN: True
+  ROI_BOX_HEAD:
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
+    PREDICTOR: "FPNPredictor"
+    NUM_CLASSES: 2
+  ROI_MASK_HEAD:
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    FEATURE_EXTRACTOR: "MaskRCNNFPNFeatureExtractor"
+    PREDICTOR: "MaskRCNNC4Predictor"
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+    CONV_LAYERS: (256, 128, 128, 64)
+  MASK_ON: True
+DATASETS:
+  TRAIN: ('ch_train',)
+  TEST: ('ch_test',)
+DATALOADER:
+  NUM_WORKERS: 1
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 0.0001
+  STEPS: (17000, 19000)
+  #MAX_ITER: 20000
+  #IMS_PER_BATCH: 32
+  MAX_ITER: 10
+  IMS_PER_BATCH: 1
+INPUT:
+  MIN_SIZE_TRAIN: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MAX_SIZE_TEST: 64
+  TO_BGR255: False
+  FLIP_PROB_TRAIN: 0.0
+OUTPUT_DIR: "/home/rhythm/Documents/Github/gcn_segmentation/data/output/"
+
+2022-09-08 17:09:07,580 maskrcnn_benchmark INFO: Running with configs:
+DATALOADER:
+  ASPECT_RATIO_GROUPING: True
+  NUM_WORKERS: 1
+  SIZE_DIVISIBILITY: 0
+DATASETS:
+  TEST: ('ch_test',)
+  TRAIN: ('ch_train',)
+INPUT:
+  CROP_PROB_TRAIN: 0.0
+  FLIP_PROB_TRAIN: 0.0
+  MAX_SIZE_TEST: 64
+  MAX_SIZE_TRAIN: 64
+  MIN_SIZE_TEST: 64
+  MIN_SIZE_TRAIN: 64
+  PIXEL_MEAN: [102.9801, 115.9465, 122.7717]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  TO_BGR255: False
+MODEL:
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    COORDS: []
+    FREEZE_CONV_BODY_AT: 2
+    NON_LOCAL: 
+    OUT_CHANNELS: 256
+  DEVICE: cuda
+  MASK_ON: True
+  META_ARCHITECTURE: GeneralizedRCNN
+  RESNETS:
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: True
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+  ROI_BOX_HEAD:
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 2
+    POOLER_RESOLUTION: 2
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    PREDICTOR: FPNPredictor
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS: (10.0, 10.0, 5.0, 5.0)
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    NMS: 0.5
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH: 0.05
+    USE_FPN: True
+  ROI_MASK_HEAD:
+    ATTN: 
+    CONV_LAYERS: (256, 128, 128, 64)
+    FEATURE_EXTRACTOR: MaskRCNNFPNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NON_LOCAL: 
+    OVERLAP: False
+    POOLER_RESOLUTION: 8
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES: (0.25, 0.125, 0.0625, 0.03125)
+    POSTPROCESS_MASKS: False
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 32
+    SHARE_BOX_FEATURE_EXTRACTOR: False
+  RPN:
+    ANCHOR_SIZES: (8, 16, 32, 64, 128)
+    ANCHOR_STRIDE: (4, 8, 16, 32, 64)
+    ASPECT_RATIOS: (0.5, 1.0, 2.0)
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: True
+  RPN_ONLY: False
+  WEIGHT: catalog://ImageNetPretrained/MSRA/R-50
+OUTPUT_DIR: /home/rhythm/Documents/Github/gcn_segmentation/data/output/
+PATHS_CATALOG: /home/rhythm/Documents/Github/gcn_segmentation/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.02
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 2500
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 10
+  MOMENTUM: 0.9
+  STEPS: (17000, 19000)
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  IMS_PER_BATCH: 1
