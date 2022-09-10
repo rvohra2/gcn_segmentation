@@ -35,7 +35,7 @@ DATASETS:
   TRAIN: ('ch_train',)
   TEST: ('ch_test',)
 DATALOADER:
-  NUM_WORKERS: 1
+  NUM_WORKERS: 0
 SOLVER:
   BASE_LR: 0.02
   WEIGHT_DECAY: 0.0001

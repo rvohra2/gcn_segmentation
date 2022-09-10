@@ -12,6 +12,9 @@ from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 from maskrcnn_benchmark.solver import make_lr_scheduler
 from maskrcnn_benchmark.solver import make_optimizer
 from maskrcnn_benchmark.config import cfg
+from maskrcnn_benchmark.data import datasets
+import torch.nn.functional as F
+
 
 def reduce_loss_dict(loss_dict):
     """
@@ -42,7 +45,8 @@ def do_train(
     data_loader,
     arguments,
 ):
-    model = GCNs(nfeat=data_loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
+    loader, adj, image, segmentation, target_mask = datasets
+    model = GCNs(nfeat=256,nhid=1024,nclass=2,dropout=0.5)
 
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
@@ -60,8 +64,8 @@ def do_train(
     end = time.time()
 
     #print(start_training_time, end)
-
-    for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
+    all_logits = []
+    for iteration, (loader, adj, image, segmentation, target_mask) in enumerate(data_loader, start_iter):
 
         print('Iteration: ', iteration)
         data_time = time.time() - end
@@ -70,22 +74,28 @@ def do_train(
         
         scheduler.step()
 
-        images = images.to(device)
-        targets = [target.to(device) for target in targets]
+        # images = images.to(device)
+        # targets = [target.to(device) for target in targets]
+        y = loader.y
+        y = y[0].type(torch.cuda.LongTensor)
+        x = loader.x
+        x = x.cpu()
         
-        loss_dict = model(images, targets)
-        print('loss_dict: ', loss_dict)
-        losses = sum(loss for loss in loss_dict.values())
-        
-        
+        # loss_dict = model(images, targets)
+        # print('loss_dict: ', loss_dict)
+        # losses = sum(loss for loss in loss_dict.values())
 
-        # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = reduce_loss_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-        meters.update(loss=losses_reduced, **loss_dict_reduced)
+        # # reduce losses over all GPUs for logging purposes
+        # loss_dict_reduced = reduce_loss_dict(loss_dict)
+        # losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        # meters.update(loss=losses_reduced, **loss_dict_reduced)
+
+        output = model(x, adj).cuda()
+        all_logits.append(output.detach())
+        loss = F.cross_entropy(output, y)
 
         optimizer.zero_grad()
-        losses.backward()
+        loss.backward()
         optimizer.step()
 
         batch_time = time.time() - end
