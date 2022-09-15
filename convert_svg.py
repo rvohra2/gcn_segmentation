@@ -54,3 +54,15 @@ def render_svg(image, bins, node_num, pth):
             f_tgt.write(tgt_svg)
         tmp_svg_path.unlink()
     tmp_bmp_path.unlink()
+
+    # # set opacity 0.5 to see overlaps
+    # with tgt_svg_path.open("r") as f_tgt:
+    #     tgt_svg = f_tgt.read()
+    # insert_pos = tgt_svg.find('<g')
+    # tgt_svg = tgt_svg[:insert_pos] + \
+    #           '<g fill-opacity="0.5">' + tgt_svg[insert_pos:]
+    # insert_pos = tgt_svg.find('</svg>')
+    # tgt_svg = tgt_svg[:insert_pos] + '</g>' + tgt_svg[insert_pos:]
+    # with tgt_svg_path.open("w") as f_tgt:
+    #     f_tgt.write(tgt_svg)
+    return tgt_svg_path
