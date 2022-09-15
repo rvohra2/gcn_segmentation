@@ -22,9 +22,11 @@ def render_svg(image, bins, node_num, pth):
 
     _, tmp_bmp_path = tempfile.mkstemp(suffix='.bmp')
     tmp_bmp_path = Path(tmp_bmp_path)
-    cond = (bins == True) & (image.mean(axis=2) < 0.5)
+    np.set_printoptions(threshold=np.inf)
+    
+    #cond = (bins == True) #& (image.mean(axis=2) < 0.5)
     #cond = (bins == True) & (image.mean(axis=1) < 0.5)
-    tmp_bmp_img = np.where(cond, 255, 0)
+    tmp_bmp_img = np.where(bins, 255, 0)
     imageio.imsave(str(tmp_bmp_path), tmp_bmp_img.astype(np.uint8))
     color = np.asarray(cscalarmap.to_rgba(node_num))
     color *= 255

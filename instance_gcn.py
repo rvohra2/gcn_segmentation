@@ -22,7 +22,7 @@ import torch.nn.functional as F
 import networkx as nx
 from convert_svg import render_svg
 from gcn_model import GCNs
-
+import cv2
 ###Working better for 500 epoch
 Epochs = 200
 
@@ -129,8 +129,8 @@ def svg_to_png(svg):
     image = cairosvg.svg2png(bytestring=svg)
     image = Image.open(io.BytesIO(image)).split()[-1].convert("RGB")
     image = ImageOps.invert(image)
-    image.thumbnail((64,64), Image.ANTIALIAS)
-    assert (image.size == (64, 64))
+    image.thumbnail((128,128), Image.ANTIALIAS)
+    #assert (image.size == (32,32))
     return image
 
 def _preprocess(image):
@@ -151,67 +151,40 @@ def slic_fixed(num_segments, compactness=1, max_iterations=2, sigma=0):
 
     return slic_image
 
-def test_loader(max_dim):
+
+###Change filename number
+svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/15.svg')
+with open(svg_name, 'r') as f_svg:
+    svg = f_svg.read()
+
+##Uncomment for cat/baseball dataset
+num_paths = svg.count('polyline')
+im1 = []
+for idx in range(1, num_paths + 1):
     features_list = []
     edge_list = []
     targets = []
-    ###Change filename number
-    svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/1.svg')
-    with open(svg_name, 'r') as f_svg:
-        svg = f_svg.read()
+    svg_xml = et.fromstring(svg)
+    # svg_xml[1] = svg_xml[idx]
+    # del svg_xml[2:]
+    svg_one = et.tostring(svg_xml, method='xml')
 
-    ###Uncomment for cat/baseball dataset
-    # num_paths = svg.count('polyline')
-
-    # for i in range(1, num_paths + 1):
-    #     svg_xml = et.fromstring(svg)
-    #     #svg_xml[1] = svg_xml[i]
-    #     #del svg_xml[2:]
-    #     svg_one = et.tostring(svg_xml, method='xml')
-
-    #     # leave only one path
-    #     y_png = cairosvg.svg2png(bytestring=svg_one)
-    #     y_img = Image.open(io.BytesIO(y_png))
-    #     mask = (np.array(y_img)[:, :, 3] > 0)
-    #     mask = mask.astype(np.uint8)
-
-    # plt.figure()
-    # plt.imshow(mask, cmap='gray')
-    # plt.show()
-
-
-    ###Uncomment for line drawing dataset
-    num_paths = len(et.fromstring(svg)[0])
-    for i in range(num_paths):
-        svg_xml = et.fromstring(svg)
-        # svg_xml[0][0] = svg_xml[0][i]
-        # del svg_xml[0][1:]
-        svg_one = et.tostring(svg_xml, method='xml')
-
-        # leave only one path
-        y_png = cairosvg.svg2png(bytestring=svg_one)
-        y_img = Image.open(io.BytesIO(y_png))
-        mask = (np.array(y_img)[:, :, 3] > 0)
-        mask = mask.astype(np.uint8)
-
-    # plt.figure()
-    # plt.imshow(mask, cmap='gray')
+    # leave only one path
+    y_png = cairosvg.svg2png(bytestring=svg_one)
+    y_img = Image.open(io.BytesIO(y_png))
+    y_img.thumbnail((128,128))
+    mask = (np.array(y_img)[:, :, 3] > 0)
+    mask = mask.astype(np.uint8)
+    #kernel = np.ones((3,3), np.uint8)
+    #mask = cv2.dilate(mask, kernel, iterations=2)
+    # plt.imshow(mask)
     # plt.show()
 
     image = svg_to_png(svg)
     image = np.asarray(image)
-    # plt.figure()
-    # plt.imshow(image)
-    # plt.show()
 
-    ###Need to fine tune
-    segmentation_algorithm = slic_fixed(200, compactness=1, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=20, sigma=0)
     segmentation = segmentation_algorithm(image)
-
-    seg_img = mark_boundaries(image, segmentation)
-    # fig = plt.figure("Superpixels -- %d segments" % (100))
-    # plt.imshow(seg_img)
-    # plt.show()
 
     adj = segmentation_adjacency(segmentation)
     adj = np.array(adj.todense())
@@ -229,172 +202,240 @@ def test_loader(max_dim):
     datasets = []
     datasets.append(Data(features, edge_x, y=targets))
 
-    return DataLoader(datasets, batch_size=1), adj, image, segmentation, target_mask
+    loader = DataLoader(datasets, batch_size=1)
 
-loader, adj, image, segmentation, target_mask = test_loader(max_dim=-1)
-
-def test(model, adj, num_instance_label, max_dim):
+    def test(model, adj, num_instance_label, max_dim):
     
-    loader, adj,image, segmentation, target_mask = test_loader(max_dim)
-    # color
-    num_colors = num_instance_label
-    colors = np.array([colorsys.hsv_to_rgb(h, 0.8, 0.8)
-                   for h in np.linspace(0, 1, num_colors)]) * 255
-    mask = np.zeros((image.shape[0], image.shape[1], 3), np.uint8)
-    node_num = len(np.unique(segmentation))
-    correct = 0
-    with torch.no_grad(): 
-        for data in loader:
-            y = data.y
-            y = y[0].type(torch.cuda.LongTensor)
-            x = data.x
-            x = x.cpu()
+        # color
+        num_colors = num_instance_label
+        colors = np.array([colorsys.hsv_to_rgb(h, 0.8, 0.8)
+                    for h in np.linspace(0, 1, num_colors)]) * 255
+        mask = np.zeros((image.shape[0], image.shape[1], 3), np.uint8)
+        node_num = len(np.unique(segmentation))
+        correct = 0
+        with torch.no_grad(): 
+            for data in loader:
+                y = data.y
+                y = y[0].type(torch.cuda.LongTensor)
+                x = data.x
+                x = x.cpu()
 
-            logits = model(x, adj)
-            logp = F.log_softmax(logits, 1)
-            pred = logp.max(1, keepdim=True)[1].cuda()
-            for v in range(0, node_num):
-                cls = pred[v][0].cpu().detach().numpy()
-                mask_color = select_mask_color_test(cls, colors)
+                logits = model(x, adj)
+                logp = F.log_softmax(logits, 1)
+                pred = logp.max(1, keepdim=True)[1].cuda()
+                for v in range(0, node_num):
+                    cls = pred[v][0].cpu().detach().numpy()
+                    mask_color = select_mask_color_test(cls, colors)
+                    
+                    mask[segmentation == v] = mask_color
+                correct += pred.eq(y.view_as(pred)).sum().item()
+            data_num = len(y)  
+            print('\n Accuracy : {}/{} ({:.0f}%)\n'.format(correct,
+                                                    data_num, 100. * correct / data_num))
+            return image, mask, target_mask
+
+    def train(model, optimizer, loader, adj):
+        all_logits = []
+        for epoch in range(Epochs):
+            loss = 0
+            for data in loader:
+                #print("data = {}".format(data))
+                y = data.y
+                y = y[0].type(torch.cuda.LongTensor)
+                # x = data.x
+                # x = x.cpu()
+
+                # optimizer.zero_grad()
+                # output = model(x, adj).cuda()
+                # all_logits.append(output.detach())
+                # #output = output.transpose(0, 1)
+                # loss = F.cross_entropy(output, y)
+                # loss.backward()
+                # optimizer.step()
+
+                logits = model(data).cuda()
+                all_logits.append(logits.detach())
+                logp = F.log_softmax(logits, 1).cuda()
+                loss = F.nll_loss(logp, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                # out = model(data).cuda()  # Perform a single forward pass.
+                # all_logits.append(out.detach())
+                # optimizer.zero_grad()
+                # loss = criterion(out, y)  # Compute the loss.
+                # loss.backward()  # Derive gradients.
+                # optimizer.step()  # Update parameters based on gradients.
                 
-                mask[segmentation == v] = mask_color
-            correct += pred.eq(y.view_as(pred)).sum().item()
-        data_num = len(y)  
-        print('\n Accuracy : {}/{} ({:.0f}%)\n'.format(correct,
-                                                   data_num, 100. * correct / data_num))
-        return image, mask, target_mask
 
-def train(model, optimizer, loader, adj):
-    all_logits = []
-    for epoch in range(Epochs):
-        loss = 0
-        for data in loader:
-            #print("data = {}".format(data))
-            y = data.y
-            y = y[0].type(torch.cuda.LongTensor)
-            x = data.x
-            x = x.cpu()
-
-            optimizer.zero_grad()
-            output = model(x, adj).cuda()
-            all_logits.append(output.detach())
-            #output = output.transpose(0, 1)
-            loss = F.cross_entropy(output, y)
-            loss.backward()
-            optimizer.step()
-
-            # logits = model(x, adj)
-            # all_logits.append(logits.detach())
-            # logp = F.log_softmax(logits, 1).cuda()
-            # loss = F.nll_loss(logp, y)
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
-
-        print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
-    return all_logits
-        
-
-def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
-#    y_pred = Variable(torch.zeros(img_size)).cuda()
-    y_pred = np.zeros((batch_size, img_size[0], img_size[1]))
-    for i in range(batch_size):
-        #print("len = {}".format(len(pred[i])))
-        for j in range(len(pred[i])):
-            indice = np.where(segmentation == j)
-            #print("pred = {}".format(pred[i, j]))
-            y_pred[i, indice[0], indice[1]] = pred[i, j]
-    return y_pred
-
-###Working better for nhid=1024, dropout=0.5, lr=0.01
-model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
-optimizer = optim.Adam(model.parameters(), 0.01)
-all_logits = train(model, optimizer, loader, adj)
-
-def select_mask_color(cls):
-    background_color = [0, 0, 0]
-    instance1_color = [255, 0, 0]
-    instance2_color = [266, 251, 0]
-    instance3_color = [143, 195, 31]
-    instance4_color = [0, 160, 233]
-    instance5_color = [29, 32, 136]
-    instance6_color = [146, 7, 131]
-    instance7_color = [228, 0, 79]
+            print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
+        return all_logits
     
-    if cls == 0:
-        return background_color
-    elif cls == 1:
-        return instance1_color
-    elif cls == 2:
-        return instance2_color
-    elif cls == 3:
-        return instance3_color
-    elif cls == 4:
-        return instance4_color
-    elif cls == 5:
-        return instance5_color
-    elif cls == 6:
-        return instance6_color
-    else:
-        return instance7_color 
 
-def create_mask(img, segmentation, node_num, epoch):
-    mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
+    def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
+    #    y_pred = Variable(torch.zeros(img_size)).cuda()
+        y_pred = np.zeros((batch_size, img_size[0], img_size[1]))
+        for i in range(batch_size):
+            #print("len = {}".format(len(pred[i])))
+            for j in range(len(pred[i])):
+                indice = np.where(segmentation == j)
+                #print("pred = {}".format(pred[i, j]))
+                y_pred[i, indice[0], indice[1]] = pred[i, j]
+        return y_pred
+
+    ###Working better for nhid=1024, dropout=0.5, lr=0.01
+    model = GCNs(loader.dataset[0].x.shape[1], 1024, 2)
+    #model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=2,dropout=0.5)
+    optimizer = optim.Adam(model.parameters(), 0.001)
+    criterion = torch.nn.CrossEntropyLoss()
+    all_logits = train(model, optimizer, loader, adj)
+
+    def select_mask_color(cls):
+        background_color = [0, 0, 0]
+        instance1_color = [143, 195, 131]
+        instance2_color = [266, 251, 0]
+        instance3_color = [143, 195, 31]
+        instance4_color = [0, 160, 233]
+        instance5_color = [29, 32, 136]
+        instance6_color = [146, 7, 131]
+        instance7_color = [228, 0, 79]
+        
+        if cls == 0:
+            return background_color
+        elif cls == 1:
+            return instance1_color
+        elif cls == 2:
+            return instance2_color
+        elif cls == 3:
+            return instance3_color
+        elif cls == 4:
+            return instance4_color
+        elif cls == 5:
+            return instance5_color
+        elif cls == 6:
+            return instance6_color
+        else:
+            return instance7_color 
+
+    def create_mask(img, segmentation, node_num, epoch):
+        mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
+        
+        for v in range(0, node_num):
+            pos[v] = all_logits[epoch][v].cpu().numpy()
+            
+            cls = pos[v].argmax()
+            
+            mask_color = select_mask_color(cls)
+            #print(mask_color)
+            mask[segmentation == v] = mask_color
+            
+        return img ,mask
+
+    adj = segmentation_adjacency(segmentation)
+    dense_adj = np.array(adj.todense())
+    edges = []
+    nodes = np.array([])
+    for i in range(0, dense_adj.shape[0]):
+        nodes = np.append(nodes, str(i))
     
-    for v in range(0, node_num):
-        pos[v] = all_logits[epoch][v].cpu().numpy()
+    nx_G = nx.Graph()
+    nx_G.add_nodes_from(nodes)
+    nx_G.add_edges_from(edges)
+    pos = nx.spring_layout(nx_G)
+
+    node_num = dense_adj.shape[0]
+
+    img, mask1 = create_mask(image, segmentation, node_num,  Epochs-1)
+
+    #Image.blend(Image.fromarray(img), Image.fromarray(mask1), 0.5)
+    plt.figure()
+    plt.subplot(1,3,1)
+    plt.imshow(image)
+    plt.subplot(1,3,2)
+    plt.imshow(mask1)
+    plt.subplot(1,3,3)
+    plt.imshow(target_mask)
+    plt.show()
+
+    mask1 = mask1.mean(axis=2)
+    mask1 = (mask1 != 0)
+    ###Change filename number
+    print(os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"), idx)
+    im = render_svg(image, mask1, node_num, os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"))
+    
+    del segmentation
+    del mask1
+    from skimage import color, segmentation
+    break
+
+    
+
+    # plt.figure()
+    # plt.imshow(mask, cmap='gray')
+    # plt.show()
+
+
+    ###Uncomment for line drawing dataset
+    # num_paths = len(et.fromstring(svg)[0])
+    # for i in range(num_paths):
+    #     svg_xml = et.fromstring(svg)
+    #     # svg_xml[0][0] = svg_xml[0][i]
+    #     # del svg_xml[0][1:]
+    #     svg_one = et.tostring(svg_xml, method='xml')
+
+    #     # leave only one path
+    #     y_png = cairosvg.svg2png(bytestring=svg_one)
+    #     y_img = Image.open(io.BytesIO(y_png))
+    #     mask = (np.array(y_img)[:, :, 3] > 0)
+    #     mask = mask.astype(np.uint8)
+
+    # plt.figure()
+    # plt.imshow(mask, cmap='gray')
+    # plt.show()
+
         
-        cls = pos[v].argmax()
-        
-        mask_color = select_mask_color(cls)
-        #print(mask_color)
-        mask[segmentation == v] = mask_color
-        
-    return img ,mask
+    # plt.figure()
+    # plt.imshow(image)
+    # plt.show()
 
+    ###Need to fine tune
+    
 
+    #seg_img = mark_boundaries(image, segmentation)
+    # fig = plt.figure("Superpixels -- %d segments" % (100))
+    # plt.imshow(seg_img)
+    # plt.show()
 
-adj = segmentation_adjacency(segmentation)
-dense_adj = np.array(adj.todense())
-edges = []
-nodes = np.array([])
-for i in range(0, dense_adj.shape[0]):
-    nodes = np.append(nodes, str(i))
-nx_G = nx.Graph()
-nx_G.add_nodes_from(nodes)
-nx_G.add_edges_from(edges)
-pos = nx.spring_layout(nx_G)
+    
 
-node_num = dense_adj.shape[0]
+    
 
-img, mask = create_mask(image, segmentation, node_num,  Epochs-1)
+    #return adj, image, segmentation, target_mask
 
-Image.blend(Image.fromarray(img), Image.fromarray(mask), 0.5)
-plt.imshow(mask)
-plt.show()
+#loader, adj, image, segmentation, target_mask = test_loader(max_dim=-1)
 
-mask = mask.mean(axis=2)
-mask = (mask != 0)
-###Change filename number
-im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/1_train.svg")
+    
 
-del segmentation
-from skimage import color, segmentation
-image, mask, target_mask = test(model, adj, 2, max_dim=-1)
+    
 
-plt.figure()
-plt.subplot(1,3,1)
-plt.imshow(image)
-plt.subplot(1,3,2)
-plt.imshow(mask)
-plt.subplot(1,3,3)
-plt.imshow(target_mask)
-plt.show()
+    # del segmentation
+    # from skimage import color, segmentation
+    # image, mask, target_mask = test(model, adj, 2, max_dim=-1)
 
-mask = mask.mean(axis=2)
-mask = (mask != 0)
-###Change filename number
-im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/1_test.svg")
+    # plt.figure()
+    # plt.subplot(1,3,1)
+    # plt.imshow(image)
+    # plt.subplot(1,3,2)
+    # plt.imshow(mask)
+    # plt.subplot(1,3,3)
+    # plt.imshow(target_mask)
+    # plt.show()
+
+    # mask = mask.mean(axis=2)
+    # mask = (mask != 0)
+    # ###Change filename number
+    # im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/10_test.svg")
 
 
     
