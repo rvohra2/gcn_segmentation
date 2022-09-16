@@ -153,20 +153,22 @@ def slic_fixed(num_segments, compactness=1, max_iterations=2, sigma=0):
 
 
 ###Change filename number
-svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/15.svg')
+svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/12.svg')
 with open(svg_name, 'r') as f_svg:
     svg = f_svg.read()
 
 ##Uncomment for cat/baseball dataset
 num_paths = svg.count('polyline')
 im1 = []
+masks = []
+
 for idx in range(1, num_paths + 1):
     features_list = []
     edge_list = []
     targets = []
     svg_xml = et.fromstring(svg)
-    # svg_xml[1] = svg_xml[idx]
-    # del svg_xml[2:]
+    svg_xml[1] = svg_xml[idx]
+    del svg_xml[2:]
     svg_one = et.tostring(svg_xml, method='xml')
 
     # leave only one path
@@ -175,16 +177,20 @@ for idx in range(1, num_paths + 1):
     y_img.thumbnail((128,128))
     mask = (np.array(y_img)[:, :, 3] > 0)
     mask = mask.astype(np.uint8)
-    #kernel = np.ones((3,3), np.uint8)
-    #mask = cv2.dilate(mask, kernel, iterations=2)
+    
     # plt.imshow(mask)
     # plt.show()
 
     image = svg_to_png(svg)
     image = np.asarray(image)
 
-    segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=20, sigma=0)
+    segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=10, sigma=0)
     segmentation = segmentation_algorithm(image)
+
+    seg_img = mark_boundaries(image, segmentation)
+    fig = plt.figure("Superpixels -- %d segments" % (100))
+    # plt.imshow(seg_img)
+    # plt.show()
 
     adj = segmentation_adjacency(segmentation)
     adj = np.array(adj.todense())
@@ -350,24 +356,26 @@ for idx in range(1, num_paths + 1):
 
     #Image.blend(Image.fromarray(img), Image.fromarray(mask1), 0.5)
     plt.figure()
-    plt.subplot(1,3,1)
-    plt.imshow(image)
-    plt.subplot(1,3,2)
-    plt.imshow(mask1)
-    plt.subplot(1,3,3)
-    plt.imshow(target_mask)
-    plt.show()
+    # plt.subplot(1,3,1)
+    # plt.imshow(image)
+    # plt.subplot(1,3,2)
+    # plt.imshow(mask1)
+    # plt.subplot(1,3,3)
+    # plt.imshow(target_mask)
+    # plt.show()
 
     mask1 = mask1.mean(axis=2)
     mask1 = (mask1 != 0)
-    ###Change filename number
-    print(os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"), idx)
-    im = render_svg(image, mask1, node_num, os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"))
-    
+    masks.append(mask1)
     del segmentation
     del mask1
     from skimage import color, segmentation
-    break
+    ###Change filename number
+print(os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"), idx)
+im = render_svg(masks, os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"))
+    
+    
+
 
     
 
