@@ -153,7 +153,7 @@ def slic_fixed(num_segments, compactness=1, max_iterations=2, sigma=0):
 
 
 ###Change filename number
-svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/12.svg')
+svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/21.svg')
 with open(svg_name, 'r') as f_svg:
     svg = f_svg.read()
 

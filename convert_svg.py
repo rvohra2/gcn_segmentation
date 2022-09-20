@@ -33,7 +33,7 @@ def render_svg(bins, pth):
         color = np.asarray(cscalarmap.to_rgba(i))
         color *= 255
         color_hex = "#{:02x}{:02x}{:02x}".format(*[int(c) for c in color])
-        exe = "/tmp/mozilla_rhythm0/potrace-1.16.linux-x86_64/potrace"
+        exe = "/tmp/potrace-1.16.linux-x86_64/potrace"
         subprocess.call([exe, '-s', '-i', '-C' + color_hex, tmp_bmp_path])
         tmp_bmp_path = Path(tmp_bmp_path)
         tmp_svg_path = tmp_bmp_path.with_suffix(".svg")

@@ -8,6 +8,7 @@ from PIL import Image
 import io
 from PIL import ImageOps
 import xml.etree.ElementTree as et
+from skimage.segmentation import find_boundaries
 
 # Load image, grayscale, Gaussian blur, Otsu's threshold, dilate
 
@@ -38,39 +39,52 @@ with open(svg_name, 'r') as f_svg:
     svg = f_svg.read()
 
 image = svg_to_png(svg)
-##Uncomment for line drawing dataset
-num_paths = len(et.fromstring(svg)[0])
-for i in range(num_paths):
-    svg_xml = et.fromstring(svg)
-    svg_xml[0][0] = svg_xml[0][i]
-    del svg_xml[0][1:]
-    svg_one = et.tostring(svg_xml, method='xml')
+mask = (np.array(image) > 0)
+# invert the mask
+th = cv2.threshold(mask,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1]
 
-    # leave only one path
-    y_png = cairosvg.svg2png(bytestring=svg_one)
-    y_img = Image.open(io.BytesIO(y_png))
-    mask = (np.array(y_img)[:, :, 3] > 0)
-    mask = mask.astype(np.uint8)
+# preserve the background
+res = cv2.bitwise_and(image, image, mask = th)
+plt.imshow(res, cmap='gray')
+plt.show()
+# ##Uncomment for line drawing dataset
+# num_paths = len(et.fromstring(svg)[0])
+# for i in range(num_paths):
+#     svg_xml = et.fromstring(svg)
+#     svg_xml[0][0] = svg_xml[0][i]
+#     del svg_xml[0][1:]
+#     svg_one = et.tostring(svg_xml, method='xml')
+
+#     # leave only one path
+#     y_png = cairosvg.svg2png(bytestring=svg_one)
+#     y_img = Image.open(io.BytesIO(y_png))
+#     mask = (np.array(y_img)[:, :, 3] > 0)
+#     mask = mask.astype(np.uint8)
     
 
 
-    original = image.copy()
-    plt.imshow(mask, cmap='gray')
-    plt.show()
+    # original = image.copy()
+    # plt.imshow(mask, cmap='gray')
+    # plt.show()
 
-    image = np.asarray(image)
-    original = np.asarray(original)
+    # image = np.asarray(image)
+    # original = np.asarray(original)
 
+    # a = find_boundaries(mask)
+    # b = find_boundaries(mask != 0)
+    # touching_masks = np.logical_xor(a, b)
+    # plt.imshow(b, cmap = 'gray')
+    # plt.show()
 
-    # Find contours, obtain bounding box coordinates, and extract ROI
-    cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    image_number = 0
-    for c in cnts:
-        x, y, w, h = get_bbox(mask, "xyxy")
-        cv2.rectangle(mask, (x, y), (x + w, y + h), (36,255,12), 2)
-        ROI = original[y:y+h, x:x+w]
-        cv2.imwrite("ROI_{}.png".format(image_number), ROI)
-        image_number += 1
+    # # Find contours, obtain bounding box coordinates, and extract ROI
+    # cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    # image_number = 0
+    # for c in cnts:
+    #     x, y, w, h = get_bbox(mask, "xyxy")
+    #     cv2.rectangle(mask, (x, y), (x + w, y + h), (36,255,12), 2)
+    #     ROI = original[y:y+h, x:x+w]
+    #     cv2.imwrite("ROI_{}.png".format(image_number), ROI)
+    #     image_number += 1
 
 cv2.imshow('image', image)
