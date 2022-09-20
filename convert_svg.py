@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-def render_svg(bins, pth):
+def render_svg(bins, node_num):
     #print('bins: ', bins)
     
     cmap = plt.get_cmap('jet')
@@ -18,12 +18,10 @@ def render_svg(bins, pth):
     cscalarmap = cmx.ScalarMappable(norm=cnorm, cmap=cmap)
     
     first_svg = True
-    #_, tgt_svg_path = tempfile.mkstemp(suffix='.svg')
-    tgt_svg_path = Path(pth)
-    
+    _, tgt_svg_path = tempfile.mkstemp(suffix='.svg')
+    tgt_svg_path = Path(tgt_svg_path)
     
     for i, valid_pred_bin in enumerate(bins):
-       
         _, tmp_bmp_path = tempfile.mkstemp(suffix='.bmp')
         tmp_bmp_path = Path(tmp_bmp_path)
         
@@ -33,7 +31,7 @@ def render_svg(bins, pth):
         color = np.asarray(cscalarmap.to_rgba(i))
         color *= 255
         color_hex = "#{:02x}{:02x}{:02x}".format(*[int(c) for c in color])
-        exe = "/tmp/mozilla_rhythm0/potrace-1.16.linux-x86_64/potrace"
+        exe = "/tmp/potrace-1.16.linux-x86_64/potrace"
         subprocess.call([exe, '-s', '-i', '-C' + color_hex, tmp_bmp_path])
         tmp_bmp_path = Path(tmp_bmp_path)
         tmp_svg_path = tmp_bmp_path.with_suffix(".svg")
@@ -53,7 +51,7 @@ def render_svg(bins, pth):
 
             insert_pos = tgt_svg.find('</svg>')
             tgt_svg = tgt_svg[:insert_pos] + \
-                      src_svg[path_start:path_end] + tgt_svg[insert_pos:]
+                        src_svg[path_start:path_end] + tgt_svg[insert_pos:]
             with tgt_svg_path.open("w") as f_tgt:
                 f_tgt.write(tgt_svg)
             tmp_svg_path.unlink()
