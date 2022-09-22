@@ -14,27 +14,28 @@ def train(model, optimizer, loader, Epochs):
             #print("data = {}".format(data))
             y = data.y
             #y_s = y.type(torch.cuda.LongTensor)
-            y_s = torch.tensor(y, dtype=int).cuda()
-            
-            # x = data.x
-            # x = x.cpu()
+            for i in range(len(y)):
+                y_s = torch.tensor(y[i], dtype=int).cuda()
+                
+                # x = data.x
+                # x = x.cpu()
 
-            # optimizer.zero_grad()
-            # output = model(x, adj).cuda()
-            # all_logits.append(output.detach())
-            # #output = output.transpose(0, 1)
-            # loss = F.cross_entropy(output, y)
-            # loss.backward()
-            # optimizer.step()
-            
-            logits = model(data).cuda()
-            all_logits.append(logits.detach())
-            logp = F.log_softmax(logits, 1).cuda()
-            
-            loss = F.nll_loss(logp, y_s)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                # optimizer.zero_grad()
+                # output = model(x, adj).cuda()
+                # all_logits.append(output.detach())
+                # #output = output.transpose(0, 1)
+                # loss = F.cross_entropy(output, y)
+                # loss.backward()
+                # optimizer.step()
+                
+                logits = model(data).cuda()
+                all_logits.append(logits.detach())
+                logp = F.log_softmax(logits, 1).cuda()
+                
+                loss = F.nll_loss(logp, y_s)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
                 
     # adj = segmentation_adjacency(data.segmentation[0])

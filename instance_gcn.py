@@ -58,10 +58,10 @@ for idx in range(len(ids)):
     targets = []
     #target_mask = np.asarray(target_mask.resize((200,200)))[:, :, 1]
     for i in range(num_paths):
-        y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
-        #targets.append(y)
+        y = Variable(torch.from_numpy(create_target(segmentation, target_mask[i], num_paths)))
+        targets.append(y)
     num_instance = np.max(target_mask)+1
-    targets_list.append(y)
+    targets_list.append(targets)
 
 for i, features in enumerate(features_list):
     new_features = np.zeros((features.shape[0], 500))
