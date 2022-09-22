@@ -19,7 +19,9 @@ def svg_to_png(svg):
     assert (image.size == (64,64))
     return image
 
-data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/ch/")
+root = "../data"
+dataset = "ch"
+data_dir = Path("data/ch/")
 def BaseDataset():
     with (data_dir / "{:s}.txt".format('train')).open("r") as f:
             ids = [_.strip() for _ in f.readlines()]
@@ -36,17 +38,17 @@ def ChineseDataset(ids, idx):
         
     for i in range(num_paths):
         svg_xml = et.fromstring(svg)
-        svg_xml[0][0] = svg_xml[0][i]
-        del svg_xml[0][1:]
+        # svg_xml[0][0] = svg_xml[0][i]
+        # del svg_xml[0][1:]
         svg_one = et.tostring(svg_xml, method='xml')
 
         # leave only one path
         y_png = cairosvg.svg2png(bytestring=svg_one)
         y_img = Image.open(io.BytesIO(y_png))
         mask = (np.array(y_img)[:, :, 3] > 0)
-        masks.append(mask.astype(np.uint8))
+        #masks.append(mask.astype(np.uint8))
     
-    return svg_to_png(svg), masks, num_paths
+    return svg_to_png(svg), mask.astype(np.uint8), num_paths
 
 def QuickDrawDataset(ids, idx):
     masks = []

@@ -1,0 +1,5 @@
+<svg version="1.1" width="{w}" height="{h}" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<g transform="rotate({r},512,512) scale({sx},{sy}) translate({tx},{ty})">
+        <path d="M 387 680 Q 463 595 550 475 Q 566 450 582 443 Q 592 440 601 451 Q 617 464 609 515 Q 600 587 393 715 Q 383 722 379 708 Q 376 693 387 680 Z"></path>
+</g>
+</svg>

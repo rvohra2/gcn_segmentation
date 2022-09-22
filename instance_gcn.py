@@ -24,7 +24,7 @@ from train import train
 from test import test
 
 ###Working better for 500 epoch
-Epochs = 10
+Epochs = 50
 
 edge_list = []
 features_list = []
@@ -58,13 +58,13 @@ for idx in range(len(ids)):
     targets = []
     #target_mask = np.asarray(target_mask.resize((200,200)))[:, :, 1]
     for i in range(num_paths):
-        y = Variable(torch.from_numpy(create_target(segmentation, target_mask[i], num_paths)))
-        targets.append(y)
+        y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+        #targets.append(y)
     num_instance = np.max(target_mask)+1
-    targets_list.append(targets)
+    targets_list.append(y)
 
 for i, features in enumerate(features_list):
-    new_features = np.zeros((features.shape[0], 300))
+    new_features = np.zeros((features.shape[0], 500))
     new_features[:, :features.shape[1]] = features
     new_features = Variable(torch.from_numpy(new_features)).type(torch.FloatTensor) 
     
