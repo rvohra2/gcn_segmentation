@@ -153,7 +153,7 @@ def slic_fixed(num_segments, compactness=1, max_iterations=2, sigma=0):
 
 
 ###Change filename number
-svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/21.svg')
+svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/15.svg')
 with open(svg_name, 'r') as f_svg:
     svg = f_svg.read()
 
@@ -226,7 +226,7 @@ for idx in range(1, num_paths + 1):
                 x = data.x
                 x = x.cpu()
 
-                logits = model(x, adj)
+                logits = model(data)
                 logp = F.log_softmax(logits, 1)
                 pred = logp.max(1, keepdim=True)[1].cuda()
                 for v in range(0, node_num):
@@ -297,62 +297,22 @@ for idx in range(1, num_paths + 1):
     criterion = torch.nn.CrossEntropyLoss()
     all_logits = train(model, optimizer, loader, adj)
 
-    def select_mask_color(cls):
-        background_color = [0, 0, 0]
-        instance1_color = [143, 195, 131]
-        instance2_color = [266, 251, 0]
-        instance3_color = [143, 195, 31]
-        instance4_color = [0, 160, 233]
-        instance5_color = [29, 32, 136]
-        instance6_color = [146, 7, 131]
-        instance7_color = [228, 0, 79]
-        
-        if cls == 0:
-            return background_color
-        elif cls == 1:
-            return instance1_color
-        elif cls == 2:
-            return instance2_color
-        elif cls == 3:
-            return instance3_color
-        elif cls == 4:
-            return instance4_color
-        elif cls == 5:
-            return instance5_color
-        elif cls == 6:
-            return instance6_color
-        else:
-            return instance7_color 
 
-    def create_mask(img, segmentation, node_num, epoch):
-        mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
-        
-        for v in range(0, node_num):
-            pos[v] = all_logits[epoch][v].cpu().numpy()
-            
-            cls = pos[v].argmax()
-            
-            mask_color = select_mask_color(cls)
-            #print(mask_color)
-            mask[segmentation == v] = mask_color
-            
-        return img ,mask
-
-    adj = segmentation_adjacency(segmentation)
-    dense_adj = np.array(adj.todense())
-    edges = []
-    nodes = np.array([])
-    for i in range(0, dense_adj.shape[0]):
-        nodes = np.append(nodes, str(i))
+    # adj = segmentation_adjacency(segmentation)
+    # dense_adj = np.array(adj.todense())
+    # edges = []
+    # nodes = np.array([])
+    # for i in range(0, dense_adj.shape[0]):
+    #     nodes = np.append(nodes, str(i))
     
-    nx_G = nx.Graph()
-    nx_G.add_nodes_from(nodes)
-    nx_G.add_edges_from(edges)
-    pos = nx.spring_layout(nx_G)
+    # nx_G = nx.Graph()
+    # nx_G.add_nodes_from(nodes)
+    # nx_G.add_edges_from(edges)
+    # pos = nx.spring_layout(nx_G)
 
-    node_num = dense_adj.shape[0]
+    # node_num = dense_adj.shape[0]
 
-    img, mask1 = create_mask(image, segmentation, node_num,  Epochs-1)
+    # img, mask1 = create_mask(image, segmentation, node_num,  Epochs-1)
 
     #Image.blend(Image.fromarray(img), Image.fromarray(mask1), 0.5)
     plt.figure()
@@ -363,12 +323,12 @@ for idx in range(1, num_paths + 1):
     # plt.subplot(1,3,3)
     # plt.imshow(target_mask)
     # plt.show()
-
-    mask1 = mask1.mean(axis=2)
+    image, mask, target_mask = test(model, adj, 2, max_dim=-1)
+    mask1 = mask.mean(axis=2)
     mask1 = (mask1 != 0)
     masks.append(mask1)
     del segmentation
-    del mask1
+    # del mask1
     from skimage import color, segmentation
     ###Change filename number
 print(os.path.join("/home/rhythm/notebook/vectorData_test/temp/", str(idx)+ "_train.svg"), idx)
