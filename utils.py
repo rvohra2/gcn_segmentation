@@ -82,7 +82,7 @@ def create_features(image, segmentation):
     
     for i in range(len(features)):
         
-        features[i].extend([0] * (500-len(features[i])))
+        features[i].extend([0] * (max_dim-len(features[i])))
         
 
     features = np.array(features)

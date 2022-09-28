@@ -16,12 +16,13 @@ def svg_to_png(svg):
     image = cairosvg.svg2png(bytestring=svg)
     image = Image.open(io.BytesIO(image)).split()[-1].convert("RGB")
     image = ImageOps.invert(image)
-    assert (image.size == (64,64))
+    assert (image.size == (128,128))
     return image
 
 root = "../data"
 dataset = "ch"
-data_dir = Path("data/ch/")
+#data_dir = Path("data/ch/")
+data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw/cat/")
 def BaseDataset():
     with (data_dir / "{:s}.txt".format('train')).open("r") as f:
             ids = [_.strip() for _ in f.readlines()]
@@ -67,7 +68,9 @@ def QuickDrawDataset(ids, idx):
         # leave only one path
         y_png = cairosvg.svg2png(bytestring=svg_one)
         y_img = Image.open(io.BytesIO(y_png))
+        y_img.thumbnail((128,128))
         mask = (np.array(y_img)[:, :, 3] > 0)
+
         #masks.append(mask.astype(np.uint8))
 
     return svg_to_png(svg), mask.astype(np.uint8), num_paths

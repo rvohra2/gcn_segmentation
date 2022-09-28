@@ -15,7 +15,7 @@ from skimage.segmentation import mark_boundaries
 from pathlib import Path
 import networkx as nx
 from convert_svg import render_svg
-from dataset import BaseDataset, ChineseDataset
+from dataset import BaseDataset, ChineseDataset, QuickDrawDataset
 from gcn_model import GCNs
 
 from utils import segmentation_adjacency, create_edge_list, create_features, create_target
@@ -35,11 +35,11 @@ segmentation_list = []
 image_list = []
 ids = BaseDataset()
 for idx in range(len(ids)):
-    image, masks, num_paths = ChineseDataset(ids, idx)
+    image, masks, num_paths = QuickDrawDataset(ids, idx)
     image = np.asarray(image)
     image_list.append(image)
 
-    segmentation_algorithm = slic_fixed(300, compactness=5, max_iterations=10, sigma=0)
+    segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=10, sigma=0)
     segmentation = segmentation_algorithm(image)
     segmentation_list.append(segmentation)
 
@@ -64,7 +64,7 @@ for idx in range(len(ids)):
     targets_list.append(y)
 
 for i, features in enumerate(features_list):
-    new_features = np.zeros((features.shape[0], 500))
+    new_features = np.zeros((features.shape[0], features.shape[1]))
     new_features[:, :features.shape[1]] = features
     new_features = Variable(torch.from_numpy(new_features)).type(torch.FloatTensor) 
     
