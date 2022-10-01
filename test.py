@@ -24,7 +24,7 @@ def test(model, loader, output_dir, ids, idx, num_instance_label):
             node_num = len(np.unique(data.segmentation))
             y = data.y
 
-            mask = np.zeros((64, 64, 3), np.uint8)
+            mask = np.zeros((128, 128, 3), np.uint8)
             y_s = y.type(torch.cuda.LongTensor)
 
             logits = model(data)

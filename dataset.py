@@ -24,7 +24,7 @@ dataset = "ch"
 #data_dir = Path("data/ch/")
 data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw/cat/")
 def BaseDataset():
-    with (data_dir / "{:s}.txt".format('train')).open("r") as f:
+    with (data_dir / "{:s}.txt".format('test')).open("r") as f:
             ids = [_.strip() for _ in f.readlines()]
     return ids
 
@@ -53,7 +53,7 @@ def ChineseDataset(ids, idx):
 
 def QuickDrawDataset(ids, idx):
     masks = []
-    svg_name = data_dir / 'train' / "{:s}.svg".format(ids[idx])
+    svg_name = data_dir / 'test' / "{:s}.svg".format(ids[idx])
     with svg_name.open('r') as f_svg:
         svg = f_svg.read()
 

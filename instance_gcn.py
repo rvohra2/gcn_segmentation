@@ -47,12 +47,14 @@ for idx in range(len(ids)):
     adj = segmentation_adjacency(segmentation)
     adj = np.array(adj.todense())
     adj = torch.from_numpy(adj).type(torch.FloatTensor)
+    #print("Pass adj")
 
     edge_x = Variable(torch.from_numpy(create_edge_list(adj))).cuda()
     edge_list.append(edge_x)
+    #print("Pass edges")
     features = Variable(torch.from_numpy(create_features(image, segmentation)))
     features_list.append(features)
-
+    #print("Pass features")
 
     target_mask = masks
     targets = []
@@ -64,14 +66,15 @@ for idx in range(len(ids)):
     targets_list.append(y)
 
 for i, features in enumerate(features_list):
-    new_features = np.zeros((features.shape[0], features.shape[1]))
+    new_features = np.zeros((features.shape[0], 500))
     new_features[:, :features.shape[1]] = features
     new_features = Variable(torch.from_numpy(new_features)).type(torch.FloatTensor) 
     
     datasets.append(Data(new_features, edge_list[i], y=targets_list[i], segmentation = segmentation_list[i], image = image_list[i]))
+    print("Pass ds")
 
 loader = DataLoader(datasets, batch_size=1)
-
+print("Pass dataloader")
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
 model = GCNs(loader.dataset[0].x.shape[1], 1024, 2)
 optimizer = optim.Adam(model.parameters(), 0.001)
