@@ -65,7 +65,7 @@ class GCNs(nn.Module):
         self.gcn2 = geometric_nn.GraphConv(H, D_out)
         
     def forward(self, data):
-        x, edge_index = data.x.cpu(), data.edge_index.cpu()
+        x, edge_index = data.x, data.edge_index
         t = torch.relu(self.gcn1(x, edge_index))
         t = self.gcn2(t, edge_index)
         return t

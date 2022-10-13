@@ -5,6 +5,8 @@ import collections
 import cairosvg
 import io
 from PIL import Image, ImageOps
+import torch
+import shutil
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -57,6 +59,8 @@ def segmentation_adjacency(segmentation, connectivity=8):
     adj = sp.coo_matrix(result)
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
     adj = normalize(adj + sp.eye(adj.shape[0]))
+    #adj_norm = (adj - np.min(adj)) / (np.max(adj) - np.min(adj))
+    #print(adj_norm.min(), adj_norm.max())
     return adj
 
 def create_edge_list(adj):
@@ -67,6 +71,7 @@ def create_edge_list(adj):
                 edge_list[0].append(i)
                 edge_list[1].append(j)
     edge_list = np.array(edge_list)
+    #print(edge_list.min(), edge_list.max())
     return edge_list
 
 def create_features(image, segmentation):
@@ -87,13 +92,14 @@ def create_features(image, segmentation):
 
     features = np.array(features)
     #features = features.reshape(-2, 27)
-    features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
+    #features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
+    #print(features_norm.min(), features_norm.max())
     
-    return features_norm
+    return features
 
 def create_target(segmentation, target_mask, num_paths):
     y = []
-    
+    #print(np.amax(segmentation))
     for i in range(np.amax(segmentation)+1):
         indices = np.where(segmentation==i)
         patch = target_mask[indices[0], indices[1]]
@@ -168,3 +174,36 @@ def create_mask(img, segmentation, node_num, epoch, pos, all_logits):
         mask[segmentation == v] = mask_color
         
     return img ,mask
+
+def save_ckp(state, is_best, checkpoint_path, best_model_path):
+    """
+    state: checkpoint we want to save
+    is_best: is this the best checkpoint; min validation loss
+    checkpoint_path: path to save checkpoint
+    best_model_path: path to save best model
+    """
+    f_path = checkpoint_path
+    # save checkpoint data to the path given, checkpoint_path
+    torch.save(state, f_path)
+    # if it is a best model, min validation loss
+    if is_best:
+        best_fpath = best_model_path
+        # copy that checkpoint file to best path given, best_model_path
+        shutil.copyfile(f_path, best_fpath)
+
+def load_ckp(checkpoint_fpath, model, optimizer):
+    """
+    checkpoint_path: path to save checkpoint
+    model: model that we want to load checkpoint parameters into       
+    optimizer: optimizer we defined in previous training
+    """
+    # load check point
+    checkpoint = torch.load(checkpoint_fpath)
+    # initialize state_dict from checkpoint to model
+    model.load_state_dict(checkpoint['state_dict'])
+    # initialize optimizer from checkpoint to optimizer
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    # initialize valid_loss_min from checkpoint to valid_loss_min
+    valid_loss_min = checkpoint['valid_loss_min']
+    # return model, optimizer, epoch value, min validation loss 
+    return model, optimizer, checkpoint['epoch'], valid_loss_min

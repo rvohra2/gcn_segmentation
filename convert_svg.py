@@ -14,6 +14,7 @@ def render_svg(bins, node_num):
     #print('bins: ', bins)
     
     cmap = plt.get_cmap('jet')
+    
     cnorm = colors.Normalize(vmin=0, vmax=len(bins) - 1)
     cscalarmap = cmx.ScalarMappable(norm=cnorm, cmap=cmap)
     

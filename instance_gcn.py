@@ -1,8 +1,9 @@
+from json import load
 import torch
 from torch.autograd import Variable
 import torch.optim as optim
 from torch_geometric.data import Data
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,13 +19,13 @@ from convert_svg import render_svg
 from dataset import BaseDataset, ChineseDataset, QuickDrawDataset
 from gcn_model import GCNs
 
-from utils import segmentation_adjacency, create_edge_list, create_features, create_target
+from utils import segmentation_adjacency, create_edge_list, create_features, create_target, load_ckp
 from slic_segm import slic_fixed
 from train import train
 from test import test
 
 ###Working better for 500 epoch
-Epochs = 50
+Epochs = 500
 
 edge_list = []
 features_list = []
@@ -36,6 +37,9 @@ image_list = []
 ids = BaseDataset()
 for idx in range(len(ids)):
     image, masks, num_paths = QuickDrawDataset(ids, idx)
+    # plt.imshow(masks)
+    # plt.show()
+    
     image = np.asarray(image)
     image_list.append(image)
 
@@ -49,7 +53,7 @@ for idx in range(len(ids)):
     adj = torch.from_numpy(adj).type(torch.FloatTensor)
     #print("Pass adj")
 
-    edge_x = Variable(torch.from_numpy(create_edge_list(adj))).cuda()
+    edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
     edge_list.append(edge_x)
     #print("Pass edges")
     features = Variable(torch.from_numpy(create_features(image, segmentation)))
@@ -57,10 +61,13 @@ for idx in range(len(ids)):
     #print("Pass features")
 
     target_mask = masks
+    #print(np.unique(target_mask))
+    
     targets = []
     #target_mask = np.asarray(target_mask.resize((200,200)))[:, :, 1]
-    for i in range(num_paths):
-        y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+    #for i in range(num_paths):
+    y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+    #print(torch.unique(y))
         #targets.append(y)
     num_instance = np.max(target_mask)+1
     targets_list.append(y)
@@ -71,18 +78,32 @@ for i, features in enumerate(features_list):
     new_features = Variable(torch.from_numpy(new_features)).type(torch.FloatTensor) 
     
     datasets.append(Data(new_features, edge_list[i], y=targets_list[i], segmentation = segmentation_list[i], image = image_list[i]))
-    print("Pass ds")
+    #print("Pass ds")
 
 loader = DataLoader(datasets, batch_size=1)
-print("Pass dataloader")
+#print("Pass dataloader")
 ###Working better for nhid=1024, dropout=0.5, lr=0.01
-model = GCNs(loader.dataset[0].x.shape[1], 1024, 2)
-optimizer = optim.Adam(model.parameters(), 0.001)
-all_logits = train(model, optimizer, loader, Epochs)
+#print(len(torch.unique(loader.dataset[0].y)))
+
+model = GCNs(loader.dataset[0].x.shape[1], 1024, 30)
+optimizer = optim.Adam(model.parameters(), 1e-4)
+# ckp_path = "/home/rhythm/notebook/vectorData_test/temp/chk.pt"
+# model, optimizer, start_epoch, valid_loss_min = load_ckp(ckp_path, model, optimizer)
+# print("model = ", model)
+# print("optimizer = ", optimizer)
+# print("start_epoch = ", start_epoch)
+# print("valid_loss_min = ", valid_loss_min)
+# print("valid_loss_min = {:.6f}".format(valid_loss_min))
+# all_logits = train(model, optimizer, loader, start_epoch, Epochs)
+
+
+ckp_path = "/home/rhythm/notebook/vectorData_test/temp/chk.pt"
+model, optimizer, start_epoch, valid_loss_min = load_ckp(ckp_path, model, optimizer)
+model.eval()
 
 output_dir = Path("/home/rhythm/notebook/vectorData_test/temp/")
 output_dir.mkdir(exist_ok=True, parents=True)
-mask = test(model, loader, output_dir, ids, idx, 2)
+mask = test(model, loader, output_dir, ids, idx, loader.dataset[0].y)
 
 # adj = segmentation_adjacency(segmentation)
 # dense_adj = np.array(adj.todense())

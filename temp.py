@@ -9,6 +9,14 @@ import io
 from PIL import ImageOps
 import xml.etree.ElementTree as et
 
+a = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+print(a)
+a[a<5] = 4
+print('a1: ', a)
+
+
+
+
 # Load image, grayscale, Gaussian blur, Otsu's threshold, dilate
 
 def svg_to_png(svg):

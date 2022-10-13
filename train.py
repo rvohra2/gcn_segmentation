@@ -3,18 +3,22 @@ import torch.nn.functional as F
 import numpy as np
 import networkx as nx
 from matplotlib import pyplot as plt
+import gc
 
-from utils import segmentation_adjacency, create_mask
+from utils import segmentation_adjacency, create_mask, save_ckp, load_ckp
 
-def train(model, optimizer, loader, Epochs):
+def train(model, optimizer, loader, start_epoch, Epochs):
     all_logits = []
-    for epoch in range(Epochs):
+    for epoch in range(start_epoch, Epochs):
+        model.train()
         loss = 0
         for data in loader:
+            gc.collect()
+            torch.cuda.empty_cache()
             #print("data = {}".format(data))
             y = data.y
-            #y_s = y.type(torch.cuda.LongTensor)
-            y_s = torch.tensor(y, dtype=int).cuda()
+            y_s = y.type(torch.cuda.LongTensor)
+            #y_s = torch.tensor(y, dtype=int)
             
             # x = data.x
             # x = x.cpu()
@@ -29,13 +33,26 @@ def train(model, optimizer, loader, Epochs):
             
             logits = model(data).cuda()
             all_logits.append(logits.detach())
-            logp = F.log_softmax(logits, 1).cuda()
+            logp = F.log_softmax(logits)
+            #print('logp: ', logp.max(), logp.min())
+            #print('y_s: ', y_s.min(), y_s.max())
             
             loss = F.nll_loss(logp, y_s)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
         print('Epoch %d | Loss: %.4f' % (epoch, loss.item()))
+
+        checkpoint = {
+            'epoch': epoch + 1,
+            'valid_loss_min': loss.item(),
+            'state_dict': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }
+
+        if epoch%10 == 0:
+            # save checkpoint
+            save_ckp(checkpoint, False, "/home/rhythm/notebook/vectorData_test/temp/chk.pt", "/home/rhythm/notebook/vectorData_test/temp/model.pt")
                 
     # adj = segmentation_adjacency(data.segmentation[0])
     # dense_adj = np.array(adj.todense())
