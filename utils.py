@@ -7,6 +7,11 @@ import io
 from PIL import Image, ImageOps
 import torch
 import shutil
+from torch.autograd import Variable
+import torch.nn.functional as F
+from torchvision.transforms import functional as Fa
+import random
+from torchvision.transforms import transforms as T
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -64,15 +69,21 @@ def segmentation_adjacency(segmentation, connectivity=8):
     return adj
 
 def create_edge_list(adj):
-    edge_list = [[], []]
-    for i in range(adj.shape[0]):
-        for j in range(adj.shape[1]):
-            if adj[i][j] != 0:
-                edge_list[0].append(i)
-                edge_list[1].append(j)
-    edge_list = np.array(edge_list)
+    x = []
+    edge = np.where(adj!=0)
+    x.append(edge)
+    x = np.array(x)[0]
+
+    # edge_list = [[], []]
+    # for i in range(adj.shape[0]):
+    #     for j in range(adj.shape[1]):
+    #         if adj[i][j] != 0:
+    #             edge_list[0].append(i)
+    #             edge_list[1].append(j)
+    # edge_list = np.array(edge_list)
+    # print((x == edge_list).all())
     #print(edge_list.min(), edge_list.max())
-    return edge_list
+    return x
 
 def create_features(image, segmentation):
     total = 0
@@ -113,15 +124,6 @@ def select_mask_color_test(cls, colors):
         return background_color
     else:
         return colors[cls]
-
-def svg_to_png(svg):
-    
-    image = cairosvg.svg2png(bytestring=svg)
-    image = Image.open(io.BytesIO(image)).split()[-1].convert("RGB")
-    image = ImageOps.invert(image)
-    image.thumbnail((128,128), Image.ANTIALIAS)
-    #assert (image.size == (32,32))
-    return image
 
 def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
     #    y_pred = Variable(torch.zeros(img_size)).cuda()
@@ -207,3 +209,134 @@ def load_ckp(checkpoint_fpath, model, optimizer):
     valid_loss_min = checkpoint['valid_loss_min']
     # return model, optimizer, epoch value, min validation loss 
     return model, optimizer, checkpoint['epoch'], valid_loss_min
+
+def focal_loss(x, y):
+    '''Focal loss.
+    Args:
+        x: (tensor) sized [N,D].
+        y: (tensor) sized [N,].
+    Return:
+        (tensor) focal loss.
+    '''
+    alpha = 0.25
+    gamma = 2
+
+    t = F.one_hot(y, 30)  # [N,21]
+    #t = t[:,1:]  # exclude background
+    t = Variable(t).type(torch.cuda.FloatTensor)
+    
+    p = x.sigmoid()
+    pt = p*t + (1-p)*(1-t)         # pt = p if t > 0 else 1-p
+    w = alpha*t + (1-alpha)*(1-t)  # w = alpha if t > 0 else 1-alpha
+    w = w * (1-pt).pow(gamma)
+    return F.binary_cross_entropy_with_logits(x, t, w.detach(), reduction='mean')
+
+class Compose(object):
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, image, target):
+        for t in self.transforms:
+            image, target = t(image, target)
+        return image, target
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + "("
+        for t in self.transforms:
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
+        return format_string
+
+class Resize(object):
+    def __init__(self, min_size, max_size):
+        self.min_size = min_size
+        self.max_size = max_size
+
+    # modified from torchvision to add support for max size
+    def get_size(self, image_size):
+        w, h = image_size
+        size = self.min_size
+        max_size = self.max_size
+        if max_size is not None:
+            min_original_size = float(min((w, h)))
+            max_original_size = float(max((w, h)))
+            if max_original_size / min_original_size * size > max_size:
+                size = int(
+                    round(max_size * min_original_size / max_original_size))
+
+        if (w <= h and w == size) or (h <= w and h == size):
+            return (h, w)
+
+        if w < h:
+            ow = size
+            oh = int(size * h / w)
+        else:
+            oh = size
+            ow = int(size * w / h)
+
+        return (oh, ow)
+
+    def __call__(self, image, target):
+        size = self.get_size(image.size)
+        image = Fa.resize(image, size)
+        target = np.resize(target, size)
+        return image, target
+
+class RandomResizeCrop(object):
+    def __init__(self, prob=0.5, crop_size=(64, 64), max_scale=1.25):
+        assert max_scale >= 1.0
+        self.prob = prob
+        self.max_scale = max_scale
+        self.crop_size = crop_size
+        self.cropper = T.RandomCrop(crop_size)
+
+    def __call__(self, image, target):
+        if random.random() < self.prob:
+            # resize
+            h = int(self.crop_size[0] * random.uniform(1.0, self.max_scale))
+            w = int(self.crop_size[1] * random.uniform(1.0, self.max_scale))
+            image = F.resize(image, (h, w))
+            target = target.resize(image.size)
+
+            # random crop
+            i, j, h, w = self.cropper.get_params(image, self.crop_size)
+            image = F.crop(image, i, j, h, w)
+            target = target.crop((j, i, j + w, i + h))
+        return image, target
+
+class RandomHorizontalFlip(object):
+    def __init__(self, prob=0.5):
+        self.prob = prob
+
+    def __call__(self, image, target):
+        if random.random() < self.prob:
+            
+            image = Fa.hflip(image)
+            target = np.flip(target, 1)
+            
+            #target = target.transpose(0)
+        return image, target
+
+class ToTensor(object):
+    def __call__(self, image, target):
+        
+        return Fa.to_tensor(image), target
+
+def build_transforms(is_train=True):
+    if is_train:
+        min_size = 128
+        max_size = 128
+        crop_prob = 0.0
+        flip_prob = 0.5
+        transform_list = [
+            Resize(min_size, max_size),
+            RandomResizeCrop(crop_prob, (min_size, min_size)),
+            RandomHorizontalFlip(flip_prob),
+        ]
+    else:
+        transform_list = []
+
+    transform_list.append(ToTensor())
+    transform = Compose(transform_list)
+    return transform

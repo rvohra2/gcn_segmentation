@@ -7,8 +7,7 @@ from matplotlib import pyplot as plt
 from convert_svg import render_svg
 from utils import select_mask_color_test
 
-def test(model, loader, output_dir, ids, idx, num_instance_label):
-
+def test(model, loader, output_dir, idx, num_instance_label):
     # color
     num_colors = num_instance_label
 
@@ -26,6 +25,7 @@ def test(model, loader, output_dir, ids, idx, num_instance_label):
 
             mask = np.zeros((128, 128, 3), np.uint8)
             y_s = y.type(torch.cuda.LongTensor)
+            print(len(torch.unique(y_s)))
             #print('y_s: ', y_s.min(), y_s.max())
 
             logits = model(data)
@@ -78,7 +78,7 @@ def test(model, loader, output_dir, ids, idx, num_instance_label):
             #mask = (mask != 0)
             #masks.append(mask)
             old_svg = render_svg(masks[1:], node_num)
-            new_svg = output_dir / "{:s}.svg".format(ids[cnt])
+            new_svg = output_dir / "{:.2f}.svg".format(cnt)
             cnt += 1
             shutil.move(str(old_svg), str(new_svg))
             #print(new_svg)
