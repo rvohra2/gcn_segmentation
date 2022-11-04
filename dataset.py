@@ -7,9 +7,12 @@ from PIL import Image
 import numpy as np
 from PIL import ImageOps
 from pathlib import Path
-from utils import build_transforms
+from utils import build_transforms, segmentation_adjacency, create_edge_list, create_features, create_target
 import sys
 import matplotlib.pyplot as plt
+from torch_geometric.data import Dataset, Data
+from slic_segm import slic_fixed
+from torch.autograd import Variable
 
 def get_dataset(dataset="ch", subset="test", is_train=True):
  
@@ -29,7 +32,7 @@ root = "../data"
 dataset = "ch"
 #data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/ch/")
 
-class BaseDataset(torch.utils.data.Dataset):
+class BaseDataset(Dataset):
     def __init__(self, data_dir, split, transforms=None, size=64):
         self.data_dir = data_dir
         self.split = split
@@ -37,6 +40,44 @@ class BaseDataset(torch.utils.data.Dataset):
         with (self.data_dir / "{:s}.txt".format(split)).open("r") as f:
                 self.ids = [_.strip() for _ in f.readlines()]
         self.transforms = transforms
+
+    # @property
+    # def raw_file_names(self):
+    #     return self.data_dir
+
+    # @property
+    # def processed_file_names(self):
+    #     """ return list of files should be in processed dir, if found - skip processing."""
+    #     processed_filename = []
+    #     return processed_filename
+    # def download(self):
+    #     pass
+
+    # def process(self):
+    #     for file in self.raw_paths:
+    #         self._process_one_step(file)
+
+    # def _process_one_step(self, path):
+    #     out_path = (self.processed_dir, "some_unique_filename.pt")
+
+    #     image, masks, num_paths = data
+    #     image = np.asarray(image)
+    #     segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=10, sigma=0)
+    #     segmentation = segmentation_algorithm(image)
+    #     adj = segmentation_adjacency(segmentation)
+    #     adj = np.array(adj.todense())
+    #     adj = torch.from_numpy(adj).type(torch.FloatTensor)
+    #     edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
+    #     features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.FloatTensor) 
+    #     target_mask = masks
+    #     y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+    #     num_instance = np.max(target_mask)+1
+    #     data = Data(features, edge_x, y=y, segmentation = segmentation)
+    #     torch.save(data, out_path)
+    #     return
+    
+
+    
     def __len__(self):
         return len(self.ids)
 
@@ -44,6 +85,7 @@ class BaseDataset(torch.utils.data.Dataset):
         raise NotImplementedError
 
     def __getitem__(self, idx):
+        #data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         image, out, num_paths = self.get_groundtruth(idx)
         
         if self.transforms:

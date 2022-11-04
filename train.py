@@ -3,9 +3,16 @@ import numpy as np
 import networkx as nx
 from matplotlib import pyplot as plt
 import gc
+import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
+from torch.autograd import Variable
 
 from utils import segmentation_adjacency, create_mask, save_ckp, load_ckp, focal_loss
 
+writer = SummaryWriter()
+log_name = '{}_{}'.format('gcn', datetime.now().strftime('%Y%m%d_%H%M%S'))
+writer = SummaryWriter('logs/{}'.format(log_name))
 def val(model, loader):
     all_logits = []
     model.eval()  
@@ -16,10 +23,15 @@ def val(model, loader):
             torch.cuda.empty_cache()
             #print("data = {}".format(data))
             y = data.y
-            y_s = y.type(torch.cuda.LongTensor)         
+            y_s = y.type(torch.cuda.LongTensor) 
+            y = y_s.unsqueeze(0)        
             logits = model(data).cuda()
-            all_logits.append(logits.detach())
-            loss = focal_loss(logits, y_s)
+            logits = logits.unsqueeze(0)
+            #all_logits.append(logits.detach())
+            loss1 = F.cross_entropy(logits.permute(0,2,1), y)
+            loss2 = focal_loss(logits, y)
+            loss = loss1 + loss2
+
 
     return loss.item()
 
@@ -35,12 +47,21 @@ def train(model, optimizer, loader):
 
         y = data.y
         y_s = y.type(torch.cuda.LongTensor)
+        y = y_s.unsqueeze(0)
+        #y_s = y.type(torch.cuda.LongTensor)
         
         logits = model(data).cuda()
-        all_logits.append(logits.detach())
-        
-        loss = focal_loss(logits, y_s)
-        #train_epoch_loss += loss.item()
+        logits = logits.unsqueeze(0)
+        #all_logits.append(logits.detach())
+        #logp = F.log_softmax(logits, 1)
+        # adj = np.array(data.adj)
+        # print(adj[0].shape[0])
+        #segmentation = data.segmentation
+        #img, mask = create_mask(data.image, segmentation[0], adj[0].shape[0], epoch, data.node, all_logits)
+        loss1 = F.cross_entropy(logits.permute(0,2,1), y)
+        loss2 = focal_loss(logits, y)
+
+        loss = loss1 + loss2
 
         optimizer.zero_grad()
         loss.backward()
@@ -53,6 +74,8 @@ def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_m
     for epoch in range(start_epoch, Epochs):
         train_loss = train(model, optimizer, loader)
         val_loss = val(model, val_loader)
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/test', val_loss, epoch)
         print('Epoch %d | Training Loss: %.4f| Validation Loss: %.4f' % (epoch, train_loss, val_loss))
 
         checkpoint = {

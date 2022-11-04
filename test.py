@@ -20,36 +20,38 @@ def test(model, loader, output_dir, idx, num_instance_label):
             colors = np.array([colorsys.hsv_to_rgb(h, 0.8, 0.8)
                 for h in np.linspace(0, 1, 30)]) * 255
             masks = []
-            node_num = len(np.unique(data.segmentation))
-            
+            node_num = len(np.unique(data.segmentation))            
 
             mask = np.zeros((128, 128, 3), np.uint8)
             y_s = y.type(torch.cuda.LongTensor)
+            y_s = y_s.unsqueeze(0)  
             print(len(torch.unique(y_s)))
             #print('y_s: ', y_s.min(), y_s.max())
 
-            logits = model(data)
+            logits = model(data).cuda()
+            logits = logits.unsqueeze(0)
             #print('logits: ', logits.min(), logits.max())
-            logp = F.log_softmax(logits)
+            logp = F.log_softmax(logits, dim=2)
+
             #print('logp: ', logp.min(), logp.max())
-            pred = logp.max(1, keepdim=True)[1].cuda()
+            pred = logp.max(2, keepdim=True)[1]
             
             print(pred.min(), pred.max())
             #print(pred.size())
             for v in range(0, node_num):
-                cls = pred[v][0].cpu().detach().numpy()
+                cls = pred[0][v][0].cpu().detach().numpy()
                 mask_color = select_mask_color_test(cls, colors)
                 
                 
-                mask[data.segmentation[0] == v] = mask_color
+                mask[data.segmentation == v] = mask_color
                 
             correct += pred.eq(y_s.view_as(pred)).sum().item()
             
 
             #print(torch.equal(y_s.unsqueeze(1), pred))
 
-            intersect = (y_s.unsqueeze(1) & pred).sum()
-            union = (y_s.unsqueeze(1) | pred).sum()
+            intersect = (y_s.unsqueeze(2) & pred).sum()
+            union = (y_s.unsqueeze(2) | pred).sum()
             result = intersect / union
             iou.append(result)
             #print('IOU: ', iou)

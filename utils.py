@@ -231,6 +231,9 @@ def focal_loss(x, y):
     w = w * (1-pt).pow(gamma)
     return F.binary_cross_entropy_with_logits(x, t, w.detach(), reduction='mean')
 
+
+
+
 class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
