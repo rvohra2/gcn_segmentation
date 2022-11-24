@@ -1,77 +1,94 @@
 import torch
-import numpy as np
-import networkx as nx
-from matplotlib import pyplot as plt
 import gc
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from torch.autograd import Variable
-
-from utils import segmentation_adjacency, create_mask, save_ckp, load_ckp, focal_loss
+from tqdm import tqdm
+from utils import save_ckp, sigmoid_focal_loss
+import config
 
 writer = SummaryWriter()
 log_name = '{}_{}'.format('gcn', datetime.now().strftime('%Y%m%d_%H%M%S'))
 writer = SummaryWriter('logs/{}'.format(log_name))
 def val(model, loader):
-    all_logits = []
     model.eval()  
-    loss = 0
-    with torch.no_grad():
-        for data in loader:
-            gc.collect()
-            torch.cuda.empty_cache()
-            #print("data = {}".format(data))
-            y = data.y
-            y_s = y.type(torch.cuda.LongTensor) 
-            y = y_s.unsqueeze(0)        
-            logits = model(data).cuda()
-            logits = logits.unsqueeze(0)
-            #all_logits.append(logits.detach())
-            loss1 = F.cross_entropy(logits.permute(0,2,1), y)
-            loss2 = focal_loss(logits, y)
-            loss = loss1 + loss2
+    val_loss = 0
+    cnt = 0
+    with tqdm(loader, unit="batch") as tepoch:
+        with torch.no_grad():
+            for data in tepoch:
+                mask = torch.zeros((1,128, 128)).cuda()
+                data = data.cuda()
+                cnt +=1
+                y = data.y
+                y = y.unsqueeze(0).float()        
+                logits = model(data)
+                logits = logits.unsqueeze(0)
+                # logp = F.log_softmax(logits, dim=2)
+                # pred = logp.max(2)[1]
+                # node_num = len(torch.unique(data.segmentation))
+                # for v in range(0, node_num):
+                #     cls = pred[0][v].float()
+                #     mask[0][data.segmentation == v] = cls
+                # mask = mask/config.OUTPUT_LAYER
+                # y = y/config.OUTPUT_LAYER
+                # loss = F.mse_loss(mask, y)
+                #val_loss += loss
+                loss = F.cross_entropy(logits.permute(0,2,1), y)
+                #t = F.one_hot(y, config.OUTPUT_LAYER).float()
+                #loss = sigmoid_focal_loss(logits, t)
+                tepoch.set_postfix(loss=loss.item())
+                writer.add_scalar('Loss/data/val', loss, cnt)
 
 
     return loss.item()
 
 def train(model, optimizer, loader):
-    all_logits = []
-
     model.train()
-    loss = 0
-    train_epoch_loss = 0
-    for data in loader:
-        gc.collect()
-        torch.cuda.empty_cache()
+    train_loss = 0
+    cnt = 0
+    with tqdm(loader, unit="batch") as tepoch:
+        for data in tepoch:
+            mask = torch.zeros((1,128, 128)).cuda()
+            data = data.cuda()
+            cnt +=1
+            y = data.y
+            y = y.unsqueeze(0).float()
+            logits = model(data)
+            logits = logits.unsqueeze(0)
+            # logp = F.log_softmax(logits, dim=2)
+            # pred = logp.max(2)[1]
+            # #print(logits.min(), logits.max(), logp.min(), logp.max())
+            # node_num = len(torch.unique(data.segmentation))
 
-        y = data.y
-        y_s = y.type(torch.cuda.LongTensor)
-        y = y_s.unsqueeze(0)
-        #y_s = y.type(torch.cuda.LongTensor)
-        
-        logits = model(data).cuda()
-        logits = logits.unsqueeze(0)
-        #all_logits.append(logits.detach())
-        #logp = F.log_softmax(logits, 1)
-        # adj = np.array(data.adj)
-        # print(adj[0].shape[0])
-        #segmentation = data.segmentation
-        #img, mask = create_mask(data.image, segmentation[0], adj[0].shape[0], epoch, data.node, all_logits)
-        loss1 = F.cross_entropy(logits.permute(0,2,1), y)
-        loss2 = focal_loss(logits, y)
+            # for v in range(0, node_num):
+            #     cls = pred[0][v].float()
+            #     #print(cls)
+            #     mask[0][data.segmentation == v] = cls
+            loss = F.cross_entropy(logits.permute(0,2,1), y)
+            
+            # mask = mask/config.OUTPUT_LAYER
+            # y = y/config.OUTPUT_LAYER
+            #print(mask.min(), mask.max(), torch.unique(mask))
+            #print(y.min(), y.max(), torch.unique(y))
+            #loss = F.mse_loss(mask.requires_grad_(True), y)
+            # t = F.one_hot(y, config.OUTPUT_LAYER).float()
+            # loss = sigmoid_focal_loss(logits, t)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            #train_loss += loss
+            tepoch.set_postfix(loss=loss.item())
+            writer.add_scalar('Loss/data/train', loss, cnt)
 
-        loss = loss1 + loss2
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
     #return ((train_epoch_loss)/len(loader))
     return loss.item()
 
 def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_min):
 
     for epoch in range(start_epoch, Epochs):
+        gc.collect()
+        torch.cuda.empty_cache()
         train_loss = train(model, optimizer, loader)
         val_loss = val(model, val_loader)
         writer.add_scalar('Loss/train', train_loss, epoch)

@@ -62,8 +62,8 @@ def segmentation_adjacency(segmentation, connectivity=8):
     result = tmp | tmp.T
     result = result.astype(np.uint8)
     adj = sp.coo_matrix(result)
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-    adj = normalize(adj + sp.eye(adj.shape[0]))
+    #adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+    #adj = normalize(adj + sp.eye(adj.shape[0]))
     #adj_norm = (adj - np.min(adj)) / (np.max(adj) - np.min(adj))
     #print(adj_norm.min(), adj_norm.max())
     return adj
@@ -101,7 +101,7 @@ def create_features(image, segmentation):
         features[i].extend([0] * (500-len(features[i])))
         
 
-    features = np.array(features)
+    features = np.array(features) /255.
     #features = features.reshape(-2, 27)
     #features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
     #print(features_norm.min(), features_norm.max())
@@ -116,7 +116,8 @@ def create_target(segmentation, target_mask, num_paths):
         patch = target_mask[indices[0], indices[1]]
         max_label = collections.Counter(patch).most_common()[0][0]
         y.append(max_label)
-    return np.array(y)
+    y = np.array(y)
+    return y
 
 def select_mask_color_test(cls, colors):
     background_color = [0, 0, 0]
@@ -221,7 +222,7 @@ def focal_loss(x, y):
     alpha = 0.25
     gamma = 2
 
-    t = F.one_hot(y, 30)  # [N,21]
+    t = F.one_hot(y, 40)  # [N,21]
     #t = t[:,1:]  # exclude background
     t = Variable(t).type(torch.cuda.FloatTensor)
     
@@ -231,8 +232,50 @@ def focal_loss(x, y):
     w = w * (1-pt).pow(gamma)
     return F.binary_cross_entropy_with_logits(x, t, w.detach(), reduction='mean')
 
+class WeightedFocalLoss(torch.nn.Module):
+    "Non weighted version of Focal Loss"
+    def __init__(self, alpha=.25, gamma=2):
+        super(WeightedFocalLoss, self).__init__()
+        self.alpha = torch.tensor([.25, .75])
+        self.gamma = 2
 
+    def forward(self, inputs, targets):
+        BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        targets = targets.type(torch.long)
+        at = self.alpha.gather(0, targets.data.view(-1))
+        pt = torch.exp(-BCE_loss)
+        F_loss = at*(1-pt)**self.gamma * BCE_loss
+        return F_loss.mean()
 
+def sigmoid_focal_loss(
+    inputs: torch.Tensor,
+    targets: torch.Tensor,
+    alpha: float = 0.25,
+    gamma: float = 2,
+    reduction: str = "mean",
+) -> torch.Tensor:
+
+    p = torch.sigmoid(inputs)
+    ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='mean')
+    p_t = p * targets + (1 - p) * (1 - targets)
+    loss = ce_loss * ((1 - p_t) ** gamma)
+
+    if alpha >= 0:
+        alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+        loss = alpha_t * loss
+
+    if reduction == "mean":
+        loss = loss.mean()
+    elif reduction == "sum":
+        loss = loss.sum()
+
+    return loss
+
+def accuracy(output, labels):
+    preds = output.type_as(labels)
+    correct = preds.eq(labels)
+    correct = correct.sum()
+    return correct / (labels.size(0)*labels.size(1))
 
 class Compose(object):
     def __init__(self, transforms):
