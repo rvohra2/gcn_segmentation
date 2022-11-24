@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 from torch_geometric.data import Dataset, Data
 from slic_segm import slic_fixed
 from torch.autograd import Variable
+import os.path as osp
+import config
+import cv2
 
 def get_dataset(dataset="ch", subset="test", is_train=True):
  
@@ -24,59 +27,47 @@ def get_dataset(dataset="ch", subset="test", is_train=True):
         #"baseball": QDrawDataset,
         #"multi": QDrawDataset,
     }
-    root = (Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw") / dataset)
+    root = (Path(config.DATASET_PATH) / dataset)
     transforms = build_transforms(is_train)
     return datasets_dict[dataset](root, subset, transforms)
 
-root = "../data"
-dataset = "ch"
-#data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/ch/")
 
 class BaseDataset(Dataset):
-    def __init__(self, data_dir, split, transforms=None, size=64):
-        self.data_dir = data_dir
+    def __init__(self, root, split, transforms=None, size=64):
+        self.root_dir = root
+        self.data_dir = Path(config.ROOT_PATH)
         self.split = split
 
-        with (self.data_dir / "{:s}.txt".format(split)).open("r") as f:
+        with (self.root_dir / "{:s}.txt".format(split)).open("r") as f:
                 self.ids = [_.strip() for _ in f.readlines()]
         self.transforms = transforms
-
-    # @property
-    # def raw_file_names(self):
-    #     return self.data_dir
-
-    # @property
-    # def processed_file_names(self):
-    #     """ return list of files should be in processed dir, if found - skip processing."""
-    #     processed_filename = []
-    #     return processed_filename
-    # def download(self):
-    #     pass
-
-    # def process(self):
-    #     for file in self.raw_paths:
-    #         self._process_one_step(file)
-
-    # def _process_one_step(self, path):
-    #     out_path = (self.processed_dir, "some_unique_filename.pt")
-
-    #     image, masks, num_paths = data
-    #     image = np.asarray(image)
-    #     segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=10, sigma=0)
-    #     segmentation = segmentation_algorithm(image)
-    #     adj = segmentation_adjacency(segmentation)
-    #     adj = np.array(adj.todense())
-    #     adj = torch.from_numpy(adj).type(torch.FloatTensor)
-    #     edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
-    #     features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.FloatTensor) 
-    #     target_mask = masks
-    #     y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
-    #     num_instance = np.max(target_mask)+1
-    #     data = Data(features, edge_x, y=y, segmentation = segmentation)
-    #     torch.save(data, out_path)
-    #     return
     
+        if not os.path.isdir(self.data_dir / self.split):
+            os.makedirs(self.data_dir / self.split)
 
+        if not os.path.isdir(self.data_dir):
+            print(f'{self.data_dir} does not exist.')
+            raise Exception(f"`{self.data_dir}` does not exist")
+
+    def _download(self):
+        pass
+
+
+    def _process_one_step(self, image, masks, num_paths):
+        image = np.asarray(image)
+        segmentation_algorithm = slic_fixed(1000, compactness=50, max_iterations=10, sigma=0)
+        segmentation = segmentation_algorithm(image)
+        adj = segmentation_adjacency(segmentation)
+        adj = np.array(adj.todense())
+        adj = torch.from_numpy(adj)
+        edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
+        features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.FloatTensor) 
+        target_mask = masks
+        #y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+        y = Variable(torch.from_numpy(target_mask))
+        #num_instance = np.max(target_mask)+1
+        data = Data(features, edge_x, y=y, segmentation = Variable(torch.from_numpy(segmentation)))
+        return data
     
     def __len__(self):
         return len(self.ids)
@@ -85,15 +76,29 @@ class BaseDataset(Dataset):
         raise NotImplementedError
 
     def __getitem__(self, idx):
+        flag = False
+        out_path = osp.join(config.ROOT_PATH,self.split, f'data_{idx}.pt')
         #data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         image, out, num_paths = self.get_groundtruth(idx)
+        if num_paths >= config.OUTPUT_LAYER:
+            print('Pass: ', idx)
+            flag = True
+            pass
+        else:
+            if flag == True:
+                idx = idx-1
+            data = self._process_one_step(image, out, num_paths)
+            torch.save(data, out_path)
+            flag = False
         
-        if self.transforms:
-            image, out = self.transforms(image, out)
-            image = image.permute(1, 2, 0)
-            return image, out, num_paths
-            
-        return image, out, num_paths
+        # if self.transforms:
+        #     out_path = osp.join("/home/rhythm/notebook/vectorData_test/temp/processed/", self.split, f'data_{self.__len__()+idx}.pt')
+        #     image, out = self.transforms(image, out)
+        #     image = image.permute(1, 2, 0)
+        #     data = self._process_one_step(image, out, num_paths)
+        #     torch.save(data, out_path)
+        #     return data
+            return data
 
     def svg_to_png(self, svg):
         image = cairosvg.svg2png(bytestring=svg)
@@ -137,10 +142,9 @@ class QuickDrawDataset(BaseDataset):
 
     def get_groundtruth(self, idx):
         masks = []
-        svg_name = self.data_dir / self.split / "{:s}.svg".format(self.ids[idx])
+        svg_name = self.root_dir / self.split / "{:s}.svg".format(self.ids[idx])
         with svg_name.open('r') as f_svg:
             svg = f_svg.read()
-
         num_paths = svg.count('polyline')
         out = np.zeros(shape=(128,128))
 
@@ -149,30 +153,22 @@ class QuickDrawDataset(BaseDataset):
             svg_xml[1] = svg_xml[i]
             del svg_xml[2:]
             svg_one = et.tostring(svg_xml, method='xml')
-
             # leave only one path
             y_png = cairosvg.svg2png(bytestring=svg_one)
             y_img = Image.open(io.BytesIO(y_png))
             y_img.thumbnail((128,128))
             # plt.imshow(y_img)
             # plt.show()
-            
             #mask = (np.array(y_img)[:, :, 3] > 0)
             mask = (np.array(y_img)[:, :, 3] > 0).astype(np.uint8)
-            #print(np.unique(mask))
-            mask = np.where(mask == 1, i, 0)
-            
-            
-            
+            # ret , thrash = cv2.threshold(imgGry, 240 , 255, cv2.CHAIN_APPROX_NONE)
+            # contours , hierarchy = cv2.findContours(thrash, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+            mask = np.where(mask == 1, i, 0)  
             #print(mask)
             out += mask
             out = np.asarray(out, dtype=int)
             #print('i: ',i, 'mask: ', out.max())
             out[out>i] = i
-
-
         return self.svg_to_png(svg), out, num_paths
 
-# svg_name = os.path.join('/home/rhythm/notebook/vectorData_test/svg/12.svg')
-# with open(svg_name, 'r') as f_svg:
-#     svg = f_svg.read()
