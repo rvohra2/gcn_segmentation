@@ -1,6 +1,6 @@
 DATASET_PATH = '/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw/'
 ROOT_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/'
-OUTPUT_PATH = '/home/rhythm/notebook/vectorData_test/temp/'
+OUTPUT_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/'
 CHK_PATH = '/home/rhythm/notebook/vectorData_test/temp/chk.pt'
 
 #dataset parameters
@@ -13,7 +13,7 @@ BATCH_SIZE = 1
 EPOCHS = 200
 LR = 1e-5
 HIDDEN_LAYER = 1024
-OUTPUT_LAYER = 30
+OUTPUT_LAYER = 5
 
 #GPU parameters
 distributed = True

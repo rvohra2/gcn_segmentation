@@ -26,11 +26,11 @@ if config.SPLIT == 'train':
     train_ds = MyDataset(Path(config.ROOT_PATH) / 'train')
     loader = DataLoader(train_ds, batch_size=config.BATCH_SIZE, num_workers=0, drop_last=True)
 
-    dataset_val = get_dataset(config.DATASET, 'val', config.TRANSFORM)
-    lst_val = os.listdir(Path(config.ROOT_PATH) / 'val')
-    if len(lst_val) != len(dataset_val):
-        for idx in range(len(dataset_val)): 
-            data_val = dataset_val[idx]
+    # dataset_val = get_dataset(config.DATASET, 'val', config.TRANSFORM)
+    # lst_val = os.listdir(Path(config.ROOT_PATH) / 'val')
+    # if len(lst_val) != len(dataset_val):
+    #     for idx in range(len(dataset_val)): 
+    #         data_val = dataset_val[idx]
 
     val_ds = MyDataset(Path(config.ROOT_PATH) / 'val')
     val_loader = DataLoader(val_ds, batch_size=config.BATCH_SIZE, num_workers=0, drop_last=True)

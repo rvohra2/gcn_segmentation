@@ -17,11 +17,11 @@ def val(model, loader):
     with tqdm(loader, unit="batch") as tepoch:
         with torch.no_grad():
             for data in tepoch:
-                mask = torch.zeros((1,128, 128)).cuda()
+                #mask = torch.zeros((1,128, 128)).cuda()
                 data = data.cuda()
                 cnt +=1
                 y = data.y
-                y = y.unsqueeze(0).float()        
+                y = y.unsqueeze(0)      
                 logits = model(data)
                 logits = logits.unsqueeze(0)
                 # logp = F.log_softmax(logits, dim=2)
@@ -34,9 +34,9 @@ def val(model, loader):
                 # y = y/config.OUTPUT_LAYER
                 # loss = F.mse_loss(mask, y)
                 #val_loss += loss
-                loss = F.cross_entropy(logits.permute(0,2,1), y)
-                #t = F.one_hot(y, config.OUTPUT_LAYER).float()
-                #loss = sigmoid_focal_loss(logits, t)
+                #loss = F.cross_entropy(logits.permute(0,2,1), y)
+                t = F.one_hot(y, config.OUTPUT_LAYER).float()
+                loss = sigmoid_focal_loss(logits, t)
                 tepoch.set_postfix(loss=loss.item())
                 writer.add_scalar('Loss/data/val', loss, cnt)
 
@@ -49,12 +49,13 @@ def train(model, optimizer, loader):
     cnt = 0
     with tqdm(loader, unit="batch") as tepoch:
         for data in tepoch:
-            mask = torch.zeros((1,128, 128)).cuda()
+            #mask = torch.zeros((1,128, 128)).cuda()
             data = data.cuda()
             cnt +=1
             y = data.y
-            y = y.unsqueeze(0).float()
+            y = y.unsqueeze(0)
             logits = model(data)
+
             logits = logits.unsqueeze(0)
             # logp = F.log_softmax(logits, dim=2)
             # pred = logp.max(2)[1]
@@ -65,15 +66,15 @@ def train(model, optimizer, loader):
             #     cls = pred[0][v].float()
             #     #print(cls)
             #     mask[0][data.segmentation == v] = cls
-            loss = F.cross_entropy(logits.permute(0,2,1), y)
+            #loss = F.cross_entropy(logits.permute(0,2,1), y)
             
             # mask = mask/config.OUTPUT_LAYER
             # y = y/config.OUTPUT_LAYER
             #print(mask.min(), mask.max(), torch.unique(mask))
             #print(y.min(), y.max(), torch.unique(y))
             #loss = F.mse_loss(mask.requires_grad_(True), y)
-            # t = F.one_hot(y, config.OUTPUT_LAYER).float()
-            # loss = sigmoid_focal_loss(logits, t)
+            t = F.one_hot(y, config.OUTPUT_LAYER).float()
+            loss = sigmoid_focal_loss(logits, t)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -104,7 +105,7 @@ def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_m
 
         if epoch%10 == 0:
             # save checkpoint
-            save_ckp(checkpoint, False, "/home/rhythm/notebook/vectorData_test/temp/chk.pt", "/home/rhythm/notebook/vectorData_test/temp/model.pt")
+            save_ckp(checkpoint, True, "/home/rhythm/notebook/vectorData_test/temp/chk.pt", "/home/rhythm/notebook/vectorData_test/temp/model.pt")
 
         if val_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,val_loss))
