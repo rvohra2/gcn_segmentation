@@ -18,6 +18,7 @@ from skimage.morphology import skeletonize
 from skimage import img_as_ubyte
 import random
 import math
+import config
 
 def normalize(adj):
     rowsum = np.array(adj.sum(1))
@@ -104,12 +105,10 @@ def create_features(image, segmentation):
             max_dim = len(features[-1])
     
     for i in range(len(features)):
-        
+        print(max_dim)
         features[i].extend([0] * (1200-len(features[i])))
-
-    
-    features1 = np.array(features)    
-    print(features1.shape)
+ 
+    #print(features1.shape)
     features = np.array(features) /255.
     #features = features.reshape(-2, 27)
     #features_norm = (features - np.min(features)) / (np.max(features) - np.min(features))
@@ -167,6 +166,22 @@ def select_mask_color(cls):
         return instance4_color
     else:
         return instance5_color 
+
+# def masks_to_colorimg(masks):
+#     colors = np.array([colorsys.hsv_to_rgb(h, 0.8, 0.8)
+#                 for h in np.linspace(0, 1, config.OUTPUT_LAYER)]) * 255
+
+#     colorimg = np.ones((masks.shape[1], masks.shape[2], 3), dtype=np.float32) * 255
+#     channels, height, width = masks.shape
+
+#     for y in range(height):
+#         for x in range(width):
+#             selected_colors = colors[masks[:,y,x] > 0.5]
+
+#             if len(selected_colors) > 0:
+#                 colorimg[y,x,:] = np.mean(selected_colors, axis=0)
+
+#     return colorimg.astype(np.uint8)
 
 def create_mask(img, segmentation, node_num, epoch, pos, all_logits):
     mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
@@ -226,7 +241,7 @@ def focal_loss(x, y):
     alpha = 0.25
     gamma = 2
 
-    t = F.one_hot(y, 40)  # [N,21]
+    t = F.one_hot(y, config.OUTPUT_LAYER)  # [N,21]
     #t = t[:,1:]  # exclude background
     t = Variable(t).type(torch.cuda.FloatTensor)
     
@@ -373,10 +388,10 @@ class ToTensor(object):
         
         return Fa.to_tensor(image), target
 
-def build_transforms(is_train=True):
+def build_transforms(is_train):
     if is_train:
-        min_size = 128
-        max_size = 128
+        min_size = 64
+        max_size = 64
         crop_prob = 0.0
         flip_prob = 0.5
         transform_list = [
@@ -384,12 +399,13 @@ def build_transforms(is_train=True):
             RandomResizeCrop(crop_prob, (min_size, min_size)),
             RandomHorizontalFlip(flip_prob),
         ]
-    else:
-        transform_list = []
+    # else:
+    #     transform_list = []
 
-    transform_list.append(ToTensor())
-    transform = Compose(transform_list)
-    return transform
+        transform_list.append(ToTensor())
+        transform = Compose(transform_list)
+        return transform
+
 
 
 class Stroke(object):

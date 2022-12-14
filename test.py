@@ -7,54 +7,81 @@ from matplotlib import pyplot as plt
 from convert_svg import render_svg
 from utils import select_mask_color
 import config
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
 
 def test(model, loader, output_dir, idx):
     # color
-    
 
-    correct = 0
     cnt = 0
+    accuracy_lst = []
+    precision_lst = []
+    recall_lst = []
+    f1_lst = []
     iou = []
+
     with torch.no_grad(): 
         for data in loader:
             data = data.cuda()
             y = data.y
             colors = np.array([colorsys.hsv_to_rgb(h, 0.8, 0.8)
-                for h in np.linspace(0, 1, 30)]) * 255
+                for h in np.linspace(0, 1, config.OUTPUT_LAYER)]) * 255
             masks = []
             node_num = len(torch.unique(data.segmentation))
             
 
-            mask = np.zeros((128, 128, 3), np.uint8)
+            mask = np.zeros((config.INPUT_WDT, config.INPUT_HGT, 3), np.uint8)
             y_s = y.type(torch.cuda.LongTensor)
-            print(len(torch.unique(y_s)))
+            #print(len(torch.unique(y_s)))
             #print('y_s: ', y_s.min(), y_s.max())
 
             logits = model(data)
             #print('logits: ', logits.min(), logits.max())
             logp = F.log_softmax(logits)
             #print('logp: ', logp.min(), logp.max())
-            pred = logp.max(1, keepdim=True)[1].cuda()
+            pred = logp.max(1)[1].cuda()
             
-            print(pred.min(), pred.max())
+            #print(pred.min(), pred.max())
             #print(pred.size())
             for v in range(0, node_num):
-                cls = pred[v][0].cpu().detach().numpy()
+                cls = pred[v].cpu().detach().numpy()
                 mask_color = select_mask_color(cls)
                 
                 
                 mask[data.segmentation.cpu().detach().numpy() == v] = mask_color
                 
-            correct += pred.eq(y_s.view_as(pred)).sum().item()
+            #correct += pred.eq(y_s.view_as(pred)).sum().item()
+            #print('Report: ', classification_report(y_s, pred))
             
+            pred = pred.cpu().detach().numpy()
+            #print(y_s.min(), y_s.max(), pred.min(), pred.max())
+            # accuracy: (tp + tn) / (p + n)
+            accuracy = accuracy_score(y_s.cpu().detach().numpy(), pred)
+            accuracy_lst.append(accuracy)
+            # precision tp / (tp + fp)
+            precision = precision_score(y_s.cpu().detach().numpy(), pred, average='weighted', zero_division=0)
+            precision_lst.append(precision)
+            # recall: tp / (tp + fn)
+            recall = recall_score(y_s.cpu().detach().numpy(), pred, average='weighted', zero_division=0)
+            recall_lst.append(recall)
+            # f1: 2 tp / (2 tp + fp + fn)
+            f1 = f1_score(y_s.cpu().detach().numpy(), pred, average='weighted', zero_division=0)
+            f1_lst.append(f1)
+
+            # # confusion matrix
+            # matrix = confusion_matrix(y_s, pred)
+            # print(matrix)
 
             #print(torch.equal(y_s.unsqueeze(1), pred))
 
-            intersect = (y_s.unsqueeze(1) & pred).sum()
-            union = (y_s.unsqueeze(1) | pred).sum()
-            result = intersect / union
-            iou.append(result)
-            #print('IOU: ', iou)
+            # intersect = (y_s.unsqueeze(1) & pred).sum()
+            # union = (y_s.unsqueeze(1) | pred).sum()
+            # result = intersect / union
+            # iou.append(result)
+            print('Accuracy: %f' % accuracy, 'Precision: %f' % precision, 'Recall: %f' % recall, 'F1 score: %f' % f1)
             #print(mask.min(), mask.max())
 
             # plt.imshow(mask)
@@ -84,7 +111,8 @@ def test(model, loader, output_dir, idx):
             cnt += 1
             shutil.move(str(old_svg), str(new_svg))
             #print(new_svg)
-        print('Final IOU: ', (sum(iou) / len(iou)))
+        print('Final Metrics: ', 'Accuracy: ', (sum(accuracy_lst) / len(accuracy_lst)), 'Precision: ', (sum(precision_lst) / len(precision_lst)),
+        'Recall: ', (sum(recall_lst) / len(recall_lst)), 'F1: ', (sum(f1_lst) / len(f1_lst)))
         #data_num = len(y)  
         #print('\n Accuracy : {}/{} ({:.0f}%)\n'.format(correct,data_num, 100. * correct / data_num))
         return mask

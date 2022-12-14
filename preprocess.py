@@ -12,7 +12,7 @@ dataset = "cat"
 root = Path(root)
 for dataset in dataset:
     dataset = 'ch'
-    data_root = Path("data/qdraw/cat/")
+    data_root = Path("data/qdraw/ch/")
     print(data_root)
     svg_root = data_root / "svg"
     png_root = data_root / "png"

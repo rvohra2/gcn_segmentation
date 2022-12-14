@@ -66,8 +66,8 @@ class BaseDataset(Dataset):
         edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
         features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.FloatTensor) 
         target_mask = masks
-        #y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
-        y = Variable(torch.from_numpy(target_mask))
+        y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+        #y = Variable(torch.from_numpy(target_mask))
         #num_instance = np.max(target_mask)+1
         data = Data(features, edge_x, y=y, segmentation = Variable(torch.from_numpy(segmentation)))
         return data
@@ -83,27 +83,27 @@ class BaseDataset(Dataset):
         out_path = osp.join(config.ROOT_PATH, self.split, f'data_{idx}.pt')
         #data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         image, out, num_paths = self.get_groundtruth(idx)
-        if num_paths > 30:
-            print('idx: ', idx, 'num_paths: ', num_paths)
-            pass
-        else:
-            if self.transforms:
-                out_path = osp.join(config.ROOT_PATH, self.split, f'data_{idx}.pt')
-                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
-                torch.save(data, out_path)
-                out_path = osp.join(config.ROOT_PATH,config.SPLIT, f'data_{self.__len__()+idx}.pt')
-                image, out = self.transforms(image, out)
-                image = image.permute(1, 2, 0)
-                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
-                torch.save(data, out_path)
-                return data
+        # if num_paths > 30:
+        #     print('idx: ', idx, 'num_paths: ', num_paths)
+        #     pass
+        # else:
+        #     if self.transforms:
+        #         out_path = osp.join(config.ROOT_PATH, self.split, f'data_{idx}.pt')
+        #         data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+        #         torch.save(data, out_path)
+        #         out_path = osp.join(config.ROOT_PATH,config.SPLIT, f'data_{self.__len__()+idx}.pt')
+        #         image, out = self.transforms(image, out)
+        #         image = image.permute(1, 2, 0)
+        #         data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+        #         torch.save(data, out_path)
+        #         return data
             
-            else:
-                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
-                torch.save(data, out_path)
-                return data
-        # data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
-        # torch.save(data, out_path)
+            # else:
+            #     data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+            #     torch.save(data, out_path)
+            #     return data
+        data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+        torch.save(data, out_path)
         return data
 
     def svg_to_png(self, svg):

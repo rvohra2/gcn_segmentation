@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 from tqdm import tqdm
-from utils import save_ckp, sigmoid_focal_loss
+from utils import save_ckp, focal_loss, sigmoid_focal_loss
 import config
 
 writer = SummaryWriter()
@@ -37,11 +37,12 @@ def val(model, loader):
                 #loss = F.cross_entropy(logits.permute(0,2,1), y)
                 t = F.one_hot(y, config.OUTPUT_LAYER).float()
                 loss = sigmoid_focal_loss(logits, t)
+                val_loss += loss.item()
                 tepoch.set_postfix(loss=loss.item())
                 writer.add_scalar('Loss/data/val', loss, cnt)
 
 
-    return loss.item()
+    return ((val_loss)/(len(loader)))
 
 def train(model, optimizer, loader):
     model.train()
@@ -75,15 +76,16 @@ def train(model, optimizer, loader):
             #loss = F.mse_loss(mask.requires_grad_(True), y)
             t = F.one_hot(y, config.OUTPUT_LAYER).float()
             loss = sigmoid_focal_loss(logits, t)
+            # loss = focal_loss(logits, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            #train_loss += loss
+            train_loss += loss.item()
             tepoch.set_postfix(loss=loss.item())
             writer.add_scalar('Loss/data/train', loss, cnt)
 
-    #return ((train_epoch_loss)/len(loader))
-    return loss.item()
+    return ((train_loss)/len(loader))
+    #return loss.item()
 
 def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_min):
 
@@ -94,6 +96,8 @@ def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_m
         val_loss = val(model, val_loader)
         writer.add_scalar('Loss/train', train_loss, epoch)
         writer.add_scalar('Loss/test', val_loss, epoch)
+
+        
         print('Epoch %d | Training Loss: %.4f| Validation Loss: %.4f' % (epoch, train_loss, val_loss))
 
         checkpoint = {
@@ -105,7 +109,7 @@ def main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_m
 
         if epoch%10 == 0:
             # save checkpoint
-            save_ckp(checkpoint, True, "/home/rhythm/notebook/vectorData_test/temp/chk.pt", "/home/rhythm/notebook/vectorData_test/temp/model.pt")
+            save_ckp(checkpoint, False, "/home/rhythm/notebook/vectorData_test/temp/chk.pt", "/home/rhythm/notebook/vectorData_test/temp/model.pt")
 
         if val_loss <= valid_loss_min:
             print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,val_loss))
