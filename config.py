@@ -1,4 +1,5 @@
 DATASET_PATH = '/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw/'
+#DATASET_PATH = '/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/'
 ROOT_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/'
 OUTPUT_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/'
 CHK_PATH = '/home/rhythm/notebook/vectorData_test/temp/chk.pt'
@@ -7,6 +8,7 @@ CHK_PATH = '/home/rhythm/notebook/vectorData_test/temp/chk.pt'
 SPLIT = 'train'
 TRANSFORM = False
 DATASET = 'cat'
+SEGM = 500
 
 #learning parameters
 BATCH_SIZE = 1

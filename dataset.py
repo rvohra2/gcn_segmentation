@@ -17,10 +17,8 @@ import os.path as osp
 import config
 import cv2
 from skimage.morphology import skeletonize
+import random
 
-
-colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255), (80, 127, 255), (255, 0, 255),
-          (255, 255, 0), (96, 164, 244)]
 def get_dataset(dataset="ch", subset="test", is_train=True):
  
     datasets_dict = {
@@ -43,6 +41,7 @@ class BaseDataset(Dataset):
         self.split = split
 
         with (self.root_dir / "{:s}.txt".format(split)).open("r") as f:
+                
                 self.ids = [_.strip() for _ in f.readlines()]
         self.transforms = transforms
     
@@ -59,7 +58,7 @@ class BaseDataset(Dataset):
 
     def _process_one_step(self, image, masks, num_paths):
         image = np.asarray(image)
-        segmentation_algorithm = slic_fixed(300, compactness=10, max_iterations=10, sigma=0)
+        segmentation_algorithm = slic_fixed(config.SEGM, compactness=10, max_iterations=10, sigma=0)
         segmentation = segmentation_algorithm(image)
         adj = segmentation_adjacency(segmentation)
         adj = np.array(adj.todense())
@@ -67,8 +66,8 @@ class BaseDataset(Dataset):
         edge_x = Variable(torch.from_numpy(create_edge_list(adj)))
         features = Variable(torch.from_numpy(create_features(image, segmentation))).type(torch.FloatTensor) 
         target_mask = masks
-        y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
-        #y = Variable(torch.from_numpy(target_mask))
+        #y = Variable(torch.from_numpy(create_target(segmentation, target_mask, num_paths)))
+        y = Variable(torch.from_numpy(target_mask))
         #num_instance = np.max(target_mask)+1
         data = Data(features, edge_x, y=y, segmentation = Variable(torch.from_numpy(segmentation)))
         return data
@@ -81,22 +80,31 @@ class BaseDataset(Dataset):
 
     def __getitem__(self, idx):
         
-        out_path = osp.join(config.ROOT_PATH,self.split, f'data_{idx}.pt')
+        out_path = osp.join(config.ROOT_PATH, self.split, f'data_{idx}.pt')
         #data = torch.load(os.path.join(self.processed_dir, self.processed_file_names[idx]))
         image, out, num_paths = self.get_groundtruth(idx)
-        
-        data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
-        torch.save(data, out_path)
+        if num_paths > 30:
+            print('idx: ', idx, 'num_paths: ', num_paths)
+            pass
+        else:
+            if self.transforms:
+                out_path = osp.join(config.ROOT_PATH, self.split, f'data_{idx}.pt')
+                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+                torch.save(data, out_path)
+                out_path = osp.join(config.ROOT_PATH,config.SPLIT, f'data_{self.__len__()+idx}.pt')
+                image, out = self.transforms(image, out)
+                image = image.permute(1, 2, 0)
+                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+                torch.save(data, out_path)
+                return data
             
-        
-        # if self.transforms:
-        #     out_path = osp.join("/home/rhythm/notebook/vectorData_test/temp/processed/", self.split, f'data_{self.__len__()+idx}.pt')
-        #     image, out = self.transforms(image, out)
-        #     image = image.permute(1, 2, 0)
-        #     data = self._process_one_step(image, out, num_paths)
-        #     torch.save(data, out_path)
-        #     return data
-            #return data
+            else:
+                data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+                torch.save(data, out_path)
+                return data
+        # data = self._process_one_step(image, out, num_paths=config.OUTPUT_LAYER)
+        # torch.save(data, out_path)
+        return data
 
     def svg_to_png(self, svg):
         image = cairosvg.svg2png(bytestring=svg)
@@ -112,7 +120,8 @@ class ChineseDataset(BaseDataset):
 
     def get_groundtruth(self, idx):
         masks = []
-        svg_name = self.data_dir / "svg" / "{:s}.svg".format(self.ids[idx])
+        out = np.zeros(shape=(64,64))
+        svg_name = self.root_dir / 'svg' / "{:s}.svg".format(self.ids[idx])
             
         with svg_name.open('r') as f_svg:
             svg = f_svg.read()
@@ -128,10 +137,21 @@ class ChineseDataset(BaseDataset):
             # leave only one path
             y_png = cairosvg.svg2png(bytestring=svg_one)
             y_img = Image.open(io.BytesIO(y_png))
-            mask = (np.array(y_img)[:, :, 3] > 0)
-            masks.append(mask.astype(np.uint8))
+            y_img.thumbnail((64,64))
+
+            mask = (np.array(y_img)[:, :, 3] > 0).astype(np.uint8)
+            #print(np.unique(mask))
+            mask = np.where(mask == 1, i, 0)
         
-        return self.svg_to_png(svg), (masks), num_paths
+            #print(mask)
+            out += mask
+            out = np.asarray(out, dtype=int)
+            #print('i: ',i, 'mask: ', out.max())
+            out[out>i] = i
+        # plt.imshow(out)
+        # plt.show()
+        
+        return self.svg_to_png(svg), out, num_paths
 
 class QuickDrawDataset(BaseDataset):
 
@@ -139,6 +159,20 @@ class QuickDrawDataset(BaseDataset):
         super().__init__(data_dir, split, transforms, size)
 
     def get_groundtruth(self, idx):
+
+        # template_fol = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/cat/train/1.svg")
+        # with template_fol.open('r') as f_svg1:
+        #     temp_svg = f_svg1.read()
+        # temp_svg_xml = et.fromstring(temp_svg)
+        # temp_svg_one = et.tostring(temp_svg_xml, method='xml')
+        # temp_y_png = cairosvg.svg2png(bytestring=temp_svg_one)
+        # temp_y_img = Image.open(io.BytesIO(temp_y_png))
+        # temp_y_img.thumbnail((128,128))
+        # temp_y_img1 = np.array(temp_y_img.convert('RGB'))
+            
+        # temp_mask = cv2.cvtColor(temp_y_img1, cv2.COLOR_RGB2GRAY)
+        
+
         svg_name = self.root_dir / self.split / "{:s}.svg".format(self.ids[idx])
         with svg_name.open('r') as f_svg:
             svg = f_svg.read()
@@ -167,22 +201,28 @@ class QuickDrawDataset(BaseDataset):
             y_img1 = np.array(y_img.convert('RGB'))
             
             mask = cv2.cvtColor(y_img1, cv2.COLOR_RGB2GRAY)
+
+            #print(cv2.matchShapes(mask, temp_mask, 1, 0.0))
             ret , thrash = cv2.threshold(mask, 10, 1, cv2.THRESH_BINARY)
             # kernel = np.ones((2,2),np.uint8)
             # thrash = cv2.erode(thrash,kernel,iterations = 1)
-            thrash1 = skeletonize(thrash).astype(np.uint8)
+            #thrash1 = skeletonize(thrash).astype(np.uint8)
             # plt.imshow(thrash1, cmap='gray')
             # plt.show()
 
-            if thrash1.max() == 0:
+            if thrash.max() == 0:
                 continue
             else:
                 
-                contours,hierarchy =  cv2.findContours(thrash1, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+                contours,hierarchy =  cv2.findContours(thrash, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
                 
                 hierarchy = hierarchy[0]
                 for i, c in enumerate(contours):
+                    
+                    
+
                     if hierarchy[i][2] < 0 and hierarchy[i][3] < 0:
+                        
                         # approx = cv2.approxPolyDP(c, 0.01 * cv2.arcLength(c, False), False)
                         # print(len(approx))
                         # dst = cv2.Canny(y_img1, 1., 15., 3)
@@ -194,24 +234,38 @@ class QuickDrawDataset(BaseDataset):
                         #                 (this_line[0][0], this_line[0][1]),
                         #                 (this_line[0][2], this_line[0][3]),
                         #                 [0, 0, 255], 3, 8)
-                        if cv2.arcLength(c, False) < 19:
+                        #print('1: ', cv2.arcLength(c, False))
+                        if cv2.arcLength(c, True) > 300:
+                            out[:,:,0] = thrash * 0 # for red
+                            out[:,:,1] = thrash * 255 # for green
+                            out[:,:,2] = thrash * 0 # for blue
+                        elif cv2.arcLength(c, False) < 20:
+                            #print('dot: ', cv2.arcLength(c, True))
                             out[:,:,0] = thrash * 255 # for red
                             out[:,:,1] = thrash * 0 # for green
                             out[:,:,2] = thrash * 255 # for blue
                         else:
                             approx = cv2.approxPolyDP(c, 0.07* cv2.arcLength(c, False), False)
-                            if len(approx) >4:
-                                out[:,:,0] = thrash * 0 # for red
-                                out[:,:,1] = thrash * 0 # for green
-                                out[:,:,2] = thrash * 255 # for blue
-                            else:
+                            #print('polydp: ', cv2.arcLength(c, True))
+                            #print('2: ', len(approx))
+                            if len(approx) <=5:
                                 out[:,:,0] = thrash * 255 # for red
                                 out[:,:,1] = thrash * 0 # for green
                                 out[:,:,2] = thrash * 0 # for blue
+                            elif len(approx) <=7 and len(approx) >5:
+                                #print('4: ', cv2.arcLength(c, False))
+                                out[:,:,0] = thrash * 0 # for red
+                                out[:,:,1] = thrash * 255 # for green
+                                out[:,:,2] = thrash * 0 # for blue
+                            else:
+                                out[:,:,0] = thrash * 0 # for red
+                                out[:,:,1] = thrash * 0 # for green
+                                out[:,:,2] = thrash * 255 # for blue
 
                     else:
-
+                        
                         if (cv2.contourArea(c) > cv2.arcLength(c, True)) == True:
+                            
                             out[:,:,0] = thrash * 0 # for red
                             out[:,:,1] = thrash * 255 # for green
                             out[:,:,2] = thrash * 0 # for blue
@@ -219,21 +273,32 @@ class QuickDrawDataset(BaseDataset):
                             #cv2.drawContours(y_img1, contours, i, (0, 255, 0), 2)
                             
                         else:
+                            
                             approx = cv2.approxPolyDP(c, 0.07 * cv2.arcLength(c, False), False)
-                            if len(approx) >4:
-                                out[:,:,0] = thrash * 0 # for red
-                                out[:,:,1] = thrash * 0 # for green
-                                out[:,:,2] = thrash * 255 # for blue
-                            else:
+                            #print('approx: ', len(approx))
+                            #print('3: ', len(approx))
+                            if len(approx) <=5:
                                 out[:,:,0] = thrash * 255 # for red
                                 out[:,:,1] = thrash * 0 # for green
                                 out[:,:,2] = thrash * 0 # for blue
-                out = out.astype(np.uint8)
-                out1 += out
-                out1 = np.asarray(out1, dtype=int)
-                #out1[out1>255] = 255
-                plt.imshow(out1)
-                plt.show()
+                            elif len(approx) <=8 and len(approx) >5:
+                                #print('4: ', cv2.arcLength(c, False))
+                                out[:,:,0] = thrash * 0 # for red
+                                out[:,:,1] = thrash * 255 # for green
+                                out[:,:,2] = thrash * 0 # for blue
+                            else:
+                                out[:,:,0] = thrash * 0 # for red
+                                out[:,:,1] = thrash * 0 # for green
+                                out[:,:,2] = thrash * 255 # for blue
+                    # plt.imshow(out)
+                    # plt.show()
+                    
+            out = out.astype(np.uint8)
+            out1 += out
+            out1 = np.asarray(out1, dtype=int)
+            #out1[out1>255] = 255
+        # plt.imshow(out1)
+        # plt.show()
         
         r = np.array([0, 255, 0])
         g = np.array([0, 0, 255])
