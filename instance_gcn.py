@@ -1,143 +1,143 @@
+import argparse
 import torch.optim as optim
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
+#from torch_geometric.data import DataLoader
+#from torch.utils.data import DataLoader
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from PIL import Image
-from skimage import segmentation
-import networkx as nx
-from convert_svg import render_svg
-from gcn_model import GCNs
-from dataset import ChineseDataset
-from train import train
+from dataloader import MyDataset
+from dataset import get_dataset
+from train import main
 from test import test
-from utils import segmentation_adjacency
+from gcn_model import GCNs
+from utils import load_ckp
+import config
+import shutil
+from torch.optim import lr_scheduler
+import torch.utils.data
+import torch
+import gc
 
-###Working better for 500 epoch
-Epochs = 200
+gc.collect()
+torch.cuda.empty_cache()
 
-def select_mask_color_test(cls, colors):
-    background_color = [0, 0, 0]
-    if cls == 0:
-        return background_color
-    else:
-        return colors[cls]
+start_epoch = 0
+valid_loss_min = np.inf
 
-def map_to_segmentation(pred, segmentation, img_size, batch_size=1):
-#    y_pred = Variable(torch.zeros(img_size)).cuda()
-    y_pred = np.zeros((batch_size, img_size[0], img_size[1]))
-    for i in range(batch_size):
-        #print("len = {}".format(len(pred[i])))
-        for j in range(len(pred[i])):
-            indice = np.where(segmentation == j)
-            #print("pred = {}".format(pred[i, j]))
-            y_pred[i, indice[0], indice[1]] = pred[i, j]
-    return y_pred
+model = GCNs(config.NUM_FEAT, config.HIDDEN_LAYER, config.OUTPUT_LAYER)
+device = torch.device(config.DEVICE)
+model.to(device)
 
-def select_mask_color(cls):
-    background_color = [0, 0, 0]
-    instance1_color = [255, 0, 0]
-    instance2_color = [266, 251, 0]
-    instance3_color = [143, 195, 31]
-    instance4_color = [0, 160, 233]
-    instance5_color = [29, 32, 136]
-    instance6_color = [146, 7, 131]
-    instance7_color = [228, 0, 79]
+optimizer = optim.Adam(model.parameters(), lr=config.LR)
+# if(config.is_L2==True):
+#     optimizer = optim.SGD(model.parameters(), lr=config.LR, momentum=0.9,weight_decay=5e-4)
+# else:
+#     optimizer = optim.SGD(model.parameters(), lr=config.LR, momentum=0.9)
+
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.1)
+
+if config.SPLIT == 'train':
+    with (Path(config.DATASET_PATH) / config.DATASET/ 'lst.txt').open("r") as f:
+                ids = [_.strip() for _ in f.readlines()]
+
+    np.random.shuffle(ids)
+    train_data, val_data = np.split(np.array(ids), [int(len(ids)*0.7)])
+
+    with open(Path(config.DATASET_PATH) / config.DATASET/ "train.txt", 'w') as f:
+        for line in train_data:
+            f.write(f"{line}\n")
+
+    with open(Path(config.DATASET_PATH) / config.DATASET/ "val.txt", 'w') as f:
+        for line in val_data:
+            f.write(f"{line}\n")
+
+    dataset_train = get_dataset(config.DATASET, config.SPLIT, config.TRANSFORM)
     
-    if cls == 0:
-        return background_color
-    elif cls == 1:
-        return instance1_color
-    elif cls == 2:
-        return instance2_color
-    elif cls == 3:
-        return instance3_color
-    elif cls == 4:
-        return instance4_color
-    elif cls == 5:
-        return instance5_color
-    elif cls == 6:
-        return instance6_color
-    else:
-        return instance7_color
+    sampler = torch.utils.data.sampler.RandomSampler(dataset_train)
 
-def create_mask(img, segmentation, node_num, epoch):
-    mask = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
-    
-    for v in range(0, node_num):
-        pos[v] = all_logits[epoch][v].cpu().numpy()
-        
-        cls = pos[v].argmax()
-        
-        mask_color = select_mask_color(cls)
-        #print(mask_color)
-        mask[segmentation == v] = mask_color
-        
-    return img ,mask
-
-data_dir = Path("/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/ch/")
-print(os.listdir(os.path.join(data_dir, 'train/')))
-idx = len([name for name in os.listdir(os.path.join(data_dir, 'train/')) ])
-
-for i in range(idx):
-    loader, adj, image, segmentation, target_mask = ChineseDataset(data_dir, i)
-    ###Working better for nhid=1024, dropout=0.5, lr=0.01
-    nums, mass = np.unique(segmentation, return_counts=True)
-    n = nums.shape[0]
-    model = GCNs(nfeat=loader.dataset[0].x.shape[1],nhid=1024,nclass=n,dropout=0.5)
-    optimizer = optim.Adam(model.parameters(), 0.01)
-    all_logits = train(model, optimizer, loader, adj, Epochs)
+    # def collate_fn(self, batch):
+    #     batch = list(filter(lambda x: x is not None, batch))
+    #     return torch.utils.data.dataloader.default_collate(batch)
 
 
-    adj = segmentation_adjacency(segmentation)
-    dense_adj = np.array(adj.todense())
-    edges = []
-    nodes = np.array([])
-    for i in range(0, dense_adj.shape[0]):
-        nodes = np.append(nodes, str(i))
-    nx_G = nx.Graph()
-    nx_G.add_nodes_from(nodes)
-    nx_G.add_edges_from(edges)
-    pos = nx.spring_layout(nx_G)
+    # lst_train = os.listdir(Path(config.ROOT_PATH) / 'train' )
+    # if len(lst_train) != len(dataset_train):
+    #     for idx in range(len(dataset_train)): 
+    #         data_train = dataset_train[idx]
 
-    node_num = dense_adj.shape[0]
+    #train_ds = MyDataset(Path(config.ROOT_PATH) / 'train')
+    loader = DataLoader(dataset_train, batch_size=config.BATCH_SIZE, shuffle=True, pin_memory=True, num_workers=0)
 
-    img, mask = create_mask(image, segmentation, node_num,  Epochs-1)
+    dataset_val = get_dataset(config.DATASET, 'val', False)
+    # lst_val = os.listdir(Path(config.ROOT_PATH) / 'val')
+    # if len(lst_val) != len(dataset_val):
+    #     for idx in range(len(dataset_val)): 
+    #         data_val = dataset_val[idx]
 
-    Image.blend(Image.fromarray(img), Image.fromarray(mask), 0.5)
-    plt.imshow(mask)
-    plt.show()
+    #val_ds = MyDataset(Path(config.ROOT_PATH) / 'val')
+    val_loader = DataLoader(dataset_val, batch_size=config.BATCH_SIZE, shuffle=True, pin_memory=True, num_workers=0)
 
-    mask = mask.mean(axis=2)
-    mask = (mask != 0)
-    ###Change filename number
-    im = render_svg(image, mask, node_num, "/home/rhythm/notebook/vectorData_test/temp/1_train.svg")
+else:
+    dataset_test = get_dataset(config.DATASET, config.SPLIT, False)
+    # lst_test = os.listdir(Path(config.ROOT_PATH) / 'test')
+    # if len(lst_test) != len(dataset_test):
+    #      for idx in range(len(dataset_test)): 
+    #           data_test = dataset_test[idx]
 
-    # del segmentation
-    # from skimage import color, segmentation
-    # image, mask, target_mask = test(model, adj, n, max_dim=-1)
-
-    # plt.figure()
-    # plt.subplot(1,3,1)
-    # plt.imshow(image)
-    # plt.title('Original Image')
-    # plt.subplot(1,3,2)
-    # plt.imshow(mask)
-    # plt.title('Output Mask')
-    # plt.subplot(1,3,3)
-    # plt.imshow(target_mask, cmap='gray')
-    # plt.title('Target Mask')
-    # plt.show()
-
-    # mask = mask.mean(axis=2)
-    # mask = (mask != 0)
-    # ###Change filename number
-    # im = render_svg(image, mask, node_num,  "/home/rhythm/notebook/vectorData_test/temp/10_test.svg")
+    #test_ds = MyDataset(Path(config.ROOT_PATH) / 'test')
+    loader = DataLoader(dataset_test, batch_size=config.BATCH_SIZE, shuffle=False, pin_memory=True, num_workers=0)
 
 
+print('Dataset loaded successfully')
+
+
+# model = GCNs(loader.dataset[0].x.shape[1], 1024, 30)
+# optimizer = optim.Adam(model.parameters(), lr)
+# all_logits = main(model, optimizer, loader, val_loader, start_epoch, Epochs, valid_loss_min)
+
+
+
+
+# model = GAT(nfeat=loader.dataset[0].x.shape[1], 
+#                 nhid=1024, 
+#                 nclass=config.OUTPUT_LAYER, 
+#                 dropout=0.6, 
+#                 nheads=8, 
+#                 alpha=0.2).cuda()
+
+#optimizer = optim.Adam(model.parameters(), config.LR)
+
+
+
+if config.SPLIT == 'train':
+    # if os.path.exists(config.CHK_PATH):
+    #     model, optimizer, start_epoch, valid_loss_min = load_ckp(config.CHK_PATH, model, optimizer)
+    #     print("model = ", model)
+    #     print("optimizer = ", optimizer)
+    #     print("start_epoch = ", start_epoch)
+    #     print("valid_loss_min = ", valid_loss_min)
+    #     print("valid_loss_min = {:.6f}".format(valid_loss_min))
+
+    all_logits = main(model, optimizer, exp_lr_scheduler,loader, val_loader, start_epoch, config.EPOCHS, device, valid_loss_min)
+else:
+    model, optimizer, start_epoch, valid_loss_min = load_ckp(config.CHK_PATH, model, optimizer)
+    model.eval()
+    output_dir = Path(config.OUTPUT_PATH)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    mask = test(model, loader, output_dir, device)
+
+
+
+
+    # model, optimizer, start_epoch, valid_loss_min = load_ckp(ckp_path, model, optimizer)
+    # print("model = ", model)
+    # print("optimizer = ", optimizer)
+    # print("start_epoch = ", start_epoch)
+    # print("valid_loss_min = ", valid_loss_min)
+    # print("valid_loss_min = {:.6f}".format(valid_loss_min))
     
 
 
-
+    
 
