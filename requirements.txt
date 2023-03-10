@@ -1,0 +1,16 @@
+cairosvg==2.6.0
+imageio==2.26.0
+matplotlib==3.6.3
+networkx==3.0
+numpy==1.23.0
+numpy_groupies==0.9.20
+Pillow==9.4.0
+scikit_image==0.19.2
+scikit_learn==1.2.2
+scipy==1.10.1
+skimage==0.0
+tensorboardX==2.6
+torch==1.13.1
+torch_geometric==2.2.0
+torchvision==0.14.1
+tqdm==4.64.1
