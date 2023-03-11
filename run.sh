@@ -5,11 +5,11 @@ state_file=${start_time}.pt
 curr_date=$(date +"%Y-%m-%d")
 
 #Defaults
-gpu=2
-node=2
+gpu=1
+node=1
 port=""
-train_time="3:00"
-script="train.py"
+train_time="11:00"
+script="instance_gcn.py"
 no_save=""
 gtype=""
 ram="8G"

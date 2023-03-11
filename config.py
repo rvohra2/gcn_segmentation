@@ -1,9 +1,9 @@
 #DATASET_PATH = '/home/rhythm/notebook/fast-line-drawing-vectorization-master/data/qdraw/'
-DATASET_PATH = '/media/storage/'
-ROOT_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/'
+DATASET_PATH = 'scratch/'
+ROOT_PATH = 'scratch/'
 OUTPUT_PATH = '/home/rhythm/notebook/vectorData_test/temp/'
-CHK_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/chk.pt'
-MODEL_PATH = '/home/rhythm/notebook/vectorData_test/temp/processed/model.pt'
+CHK_PATH = 'scratch/chk.pt'
+MODEL_PATH = 'scratch/model.pt'
 
 #dataset parameters
 SPLIT = 'train'
@@ -14,7 +14,7 @@ INPUT_WDT = 128
 INPUT_HGT = 128
 
 #learning parameters
-BATCH_SIZE = 1
+BATCH_SIZE = 32
 EPOCHS = 1000
 LR = 1e-5
 HIDDEN_LAYER = 1024

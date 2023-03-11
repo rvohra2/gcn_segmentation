@@ -11,7 +11,7 @@
 . scripts/utils.sh
 
 module purge
-module load python/3.8 scipy-stack
+module load python/3.9 scipy-stack
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
@@ -24,10 +24,10 @@ else
     touch $state_file
 fi
 
-pip install --no-index -r requirements.txt 
-pip install pyclipper
+# pip install --no-index -r requirements.txt 
+# pip install pyclipper
 #start training program
-python ./train.py --config config/cc/ct_r18_tt.py $resume --state-file $state_file 
+python ./instance_gcn.py $resume --state-file $state_file 
 
 error_code=$?
 echo "Program finished with error code: $error_code"

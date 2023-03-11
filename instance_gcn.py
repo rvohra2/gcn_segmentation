@@ -111,13 +111,13 @@ print('Dataset loaded successfully')
 
 
 if config.SPLIT == 'train':
-#     if os.path.exists(config.CHK_PATH):
-        # model, optimizer, start_epoch, valid_loss_min = load_ckp(config.CHK_PATH, model, optimizer)
-        # print("model = ", model)
-        # print("optimizer = ", optimizer)
-        # print("start_epoch = ", start_epoch)
-        # print("valid_loss_min = ", valid_loss_min)
-        # print("valid_loss_min = {:.6f}".format(valid_loss_min))
+    if os.path.exists(config.CHK_PATH):
+        model, optimizer, start_epoch, valid_loss_min = load_ckp(config.CHK_PATH, model, optimizer)
+        print("model = ", model)
+        print("optimizer = ", optimizer)
+        print("start_epoch = ", start_epoch)
+        print("valid_loss_min = ", valid_loss_min)
+        print("valid_loss_min = {:.6f}".format(valid_loss_min))
 
     all_logits = main(model, optimizer, exp_lr_scheduler,loader, val_loader, start_epoch, config.EPOCHS, device, valid_loss_min)
 else:
@@ -126,6 +126,7 @@ else:
     output_dir = Path(config.OUTPUT_PATH)
     output_dir.mkdir(exist_ok=True, parents=True)
     mask = test(model, loader, output_dir, device)
+
 
 
 
